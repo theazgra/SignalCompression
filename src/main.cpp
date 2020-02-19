@@ -44,40 +44,6 @@ int main(int, char **)
 {
     test_fib("/mnt/d/codes/git/signal_compression/data/uniform_8.txt");
     test_fib("/mnt/d/codes/git/signal_compression/data/uniform_16.txt");
-//    const auto values8 = read_values("/mnt/d/codes/git/signal_compression/data/uniform_8.txt");
-//    const auto values16 = read_values("/mnt/d/codes/git/signal_compression/data/uniform_16.txt");
-//    //const auto values8 = read_values("/mnt/d/codes/git/signal_compression/data/test.txt");
-//
-//    const auto fibSeq = generate_fibonacci_sequence(100);
-//
-//    azgra::io::stream::OutMemoryBitStream u8EncodedStream;
-//    azgra::io::stream::OutMemoryBitStream u16EncodedStream;
-//
-//    encode_with_fib_sequence(u8EncodedStream, values8, fibSeq);
-//    encode_with_fib_sequence(u16EncodedStream, values16, fibSeq);
-//
-//    const auto u8Buffer = u8EncodedStream.get_flushed_buffer();
-//    const auto u16Buffer = u16EncodedStream.get_flushed_buffer();
-//    azgra::io::dump_bytes(u8Buffer, "u8.enc");
-//    azgra::io::dump_bytes(u16Buffer, "u16.enc");
-//
-//
-//    azgra::io::stream::InMemoryBitStream inU8Stream(&u8Buffer);
-//    azgra::io::stream::InMemoryBitStream inU16Stream(&u16Buffer);
-//
-//    const auto decodedU8 = decode_fibonacci<uint32_t>(inU8Stream, fibSeq);
-//    const auto decodedU16 = decode_fibonacci<uint32_t>(inU16Stream, fibSeq);
-//
-//
-//    const bool eq = std::equal(values8.begin(), values8.end(), decodedU8.begin(), decodedU8.end());
-//    const bool eq2 = std::equal(values16.begin(), values16.end(), decodedU16.begin(), decodedU16.end());
-//
-//    azgra::print_colorized(eq ? azgra::ConsoleColor::ConsoleColor_Green : azgra::ConsoleColor::ConsoleColor_Red,
-//                           "U8 Arrays are %s\n", eq ? "equal" : "different");
-//    azgra::print_colorized(eq ? azgra::ConsoleColor::ConsoleColor_Green : azgra::ConsoleColor::ConsoleColor_Red,
-//                           "U16 Arrays are %s\n", eq ? "equal" : "different");
-
-
     return 0;
 
 }
