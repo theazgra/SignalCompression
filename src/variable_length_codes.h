@@ -5,6 +5,8 @@
 #include <azgra/azgra.h>
 #include <azgra/collection/enumerable_functions.h>
 #include <azgra/io/stream/memory_bit_stream.h>
+#include <azgra/utilities/binary_converter.h>
+#include <type_traits>
 
 inline std::vector<size_t> generate_fibonacci_sequence(const size_t sequenceLength)
 {
@@ -30,11 +32,12 @@ static std::pair<size_t, size_t> largest_lte_fib_num_index(const std::vector<siz
                                                            const T target,
                                                            const size_t maxExclusiveIndex)
 {
+    const auto castedTarget = static_cast<size_t >(target);
     always_assert(maxExclusiveIndex > 1);
     const auto fromIndex = static_cast<size_t>(maxExclusiveIndex - 1);
     for (auto i = fromIndex; i >= 0; --i)
     {
-        if (fibSeq[i] <= target)
+        if (fibSeq[i] <= castedTarget)
         {
             return std::make_pair(fibSeq[i], i);
         }
@@ -52,9 +55,9 @@ void encode_fibonacci(azgra::io::stream::OutMemoryBitStream &bitStream,
     const size_t valueCount = values.size();
     bitStream.write_value(valueCount);
 
-    for (int i = 0; i < valueCount; ++i)
+    for (size_t valueIndex = 0; valueIndex < valueCount; ++valueIndex)
     {
-        const T value = values[i];
+        const T value = values[valueIndex];
         always_assert(value != 0);
         long remaining = static_cast<long> (value);
         std::vector<size_t> fibIndices;
@@ -88,7 +91,7 @@ std::vector<T> decode_fibonacci(azgra::io::stream::InMemoryBitStream &bitStream,
     bool prevWasOne = false;
     std::vector<size_t> fibIndices;
     long fibIndex;
-    for (int valueIndex = 0; valueIndex < expectedValueCount; ++valueIndex)
+    for (size_t valueIndex = 0; valueIndex < expectedValueCount; ++valueIndex)
     {
         prevWasOne = false;
         fibIndices.clear();
@@ -121,6 +124,99 @@ std::vector<T> decode_fibonacci(azgra::io::stream::InMemoryBitStream &bitStream,
                 prevWasOne = false;
             }
             ++fibIndex;
+        }
+
+    }
+    return result;
+}
+
+
+template<typename T>
+void encode_elias_gamma(azgra::io::stream::OutMemoryBitStream &bitStream,
+                        const std::vector<T> &values)
+{
+    static_assert(std::is_integral_v<T>);
+    const size_t valueCount = values.size();
+    bitStream.write_value(valueCount);
+    size_t bitCount;
+    for (const T value : values)
+    {
+        if (value == 1)
+        {
+            bitStream << true;
+            continue;
+        }
+        const auto valueBits = azgra::to_binary_representation(value);
+        bitCount = valueBits.size();
+
+        long i = 0;
+
+        // Find the first 1 in binary code.
+        for (i = static_cast<long>(bitCount - 1); i >= 0; --i)
+        {
+            if (valueBits[i])
+            {
+                break;
+            }
+        }
+        if (i == static_cast<long>(bitCount))
+        { continue; }
+
+        bitStream.write_replicated_bit(false, i);
+
+        for (; i >= 0; --i)
+        {
+            bitStream.write_bit(valueBits[i]);
+        }
+    }
+}
+
+template<typename T>
+std::vector<T> decode_elias_gamma(azgra::io::stream::InMemoryBitStream &bitStream)
+{
+    const auto expectedValueCount = bitStream.read_value<size_t>();
+    std::vector<T> result(expectedValueCount);
+
+    bool bit;
+    size_t zeroCounter;
+    for (size_t valueIndex = 0; valueIndex < expectedValueCount; ++valueIndex)
+    {
+        zeroCounter = 0;
+        bit = bitStream.read_bit();
+        if (bit)
+        {
+            result[valueIndex] = 1;
+            continue;
+        }
+        else
+        {
+            zeroCounter += 1;
+            while (true)
+            {
+                bit = bitStream.read_bit();
+                if (bit)
+                {
+                    // TODO: Replace later with binary shift and or!
+                    T value = 0;
+                    value |= (1u << zeroCounter);
+                    for (size_t readIndex = 0; readIndex < zeroCounter; ++readIndex)
+                    {
+                        // If read 1
+                        if (bitStream.read_bit())
+                        {
+                            value |= (1u << (zeroCounter - 1 - readIndex));
+                        }
+                    }
+
+                    result[valueIndex] = value;
+                    break;
+                }
+                else
+                {
+                    ++zeroCounter;
+                }
+            }
+
         }
 
     }
