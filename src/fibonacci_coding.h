@@ -6,12 +6,12 @@
 #include <azgra/collection/enumerable_functions.h>
 #include <azgra/io/stream/memory_bit_stream.h>
 
-inline std::vector<size_t> generate_fibonacci_sequence(const size_t N)
+inline std::vector<size_t> generate_fibonacci_sequence(const size_t sequenceLength)
 {
-    always_assert(N <= std::numeric_limits<long>::max());
+    always_assert(sequenceLength <= std::numeric_limits<long>::max());
 
-    long n = N + 1;
-    std::vector<size_t> fibN(N);
+    long n = sequenceLength + 1;
+    std::vector<size_t> fibN(sequenceLength);
     size_t a = 0;
     size_t b = 1;
     size_t i = 0;
@@ -44,9 +44,9 @@ static std::pair<size_t, size_t> largest_lte_fib_num_index(const std::vector<siz
 }
 
 template<typename T>
-void encode_with_fib_sequence(azgra::io::stream::OutMemoryBitStream &bitStream,
-                              const std::vector<T> &values,
-                              const std::vector<size_t> &fibSeq)
+void encode_fibonacci(azgra::io::stream::OutMemoryBitStream &bitStream,
+                      const std::vector<T> &values,
+                      const std::vector<size_t> &fibSeq)
 {
     static_assert(std::is_integral_v<T>);
     const size_t valueCount = values.size();
@@ -69,40 +69,18 @@ void encode_with_fib_sequence(azgra::io::stream::OutMemoryBitStream &bitStream,
         for (size_t i = 0; i <= maxFibIndex; ++i)
         {
             // Index is set write 1
+            // TODO(Moravec): Why do we need std::find really?
             const bool bit = std::find(fibIndices.begin(), fibIndices.end(), i) != fibIndices.end();
             bitStream << bit;
         }
         // Write terminating 1.
         bitStream << true;
     }
-
-//    for (const T &value : values)
-//    {
-//        always_assert(value != 0);
-//        long remaining = static_cast<long> (value);
-//        std::vector<size_t> fibIndices;
-//        size_t maxIndex = fibSeq.size();
-//        while (remaining > 0)
-//        {
-//            auto[value, index] = largest_lte_fib_num_index(fibSeq, remaining, maxIndex);
-//            fibIndices.push_back(index);
-//            remaining -= value;
-//        }
-//        const size_t maxFibIndex = azgra::collection::max(fibIndices.begin(), fibIndices.end());
-//        for (size_t i = 0; i <= maxFibIndex; ++i)
-//        {
-//            // Index is set write 1
-//            const bool bit = std::find(fibIndices.begin(), fibIndices.end(), i) != fibIndices.end();
-//            bitStream << bit;
-//        }
-//        // Write terminating 1.
-//        bitStream << true;
-//    }
 }
 
 template<typename T>
-std::vector<T> decode_with_fib_seq(azgra::io::stream::InMemoryBitStream &bitStream,
-                                   const std::vector<size_t> &fibSeq)
+std::vector<T> decode_fibonacci(azgra::io::stream::InMemoryBitStream &bitStream,
+                                const std::vector<size_t> &fibSeq)
 {
     const auto expectedValueCount = bitStream.read_value<size_t>();
     std::vector<T> result(expectedValueCount);

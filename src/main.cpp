@@ -5,7 +5,6 @@
 
 std::vector<uint32_t> read_values(const azgra::BasicStringView<char> &file)
 {
-    //auto str = std::string(file.stri);
     std::vector<uint32_t> values = azgra::io::parse_by_lines<uint32_t>(file, [](const azgra::string::SmartStringView<char> &line)
     {
         int value;
@@ -23,13 +22,13 @@ void test_fib(azgra::BasicStringView<char> inputFile)
 
     azgra::io::stream::OutMemoryBitStream encodedStream;
 
-    encode_with_fib_sequence(encodedStream, values, fibSeq);
+    encode_fibonacci(encodedStream, values, fibSeq);
 
     const auto buffer = encodedStream.get_flushed_buffer();
 
     azgra::io::stream::InMemoryBitStream inStream(&buffer);
 
-    const auto decodedValues = decode_with_fib_seq<uint32_t>(inStream, fibSeq);
+    const auto decodedValues = decode_fibonacci<uint32_t>(inStream, fibSeq);
 
     const bool eq = std::equal(values.begin(), values.end(), decodedValues.begin(), decodedValues.end());
 
@@ -66,8 +65,8 @@ int main(int, char **)
 //    azgra::io::stream::InMemoryBitStream inU8Stream(&u8Buffer);
 //    azgra::io::stream::InMemoryBitStream inU16Stream(&u16Buffer);
 //
-//    const auto decodedU8 = decode_with_fib_seq<uint32_t>(inU8Stream, fibSeq);
-//    const auto decodedU16 = decode_with_fib_seq<uint32_t>(inU16Stream, fibSeq);
+//    const auto decodedU8 = decode_fibonacci<uint32_t>(inU8Stream, fibSeq);
+//    const auto decodedU16 = decode_fibonacci<uint32_t>(inU16Stream, fibSeq);
 //
 //
 //    const bool eq = std::equal(values8.begin(), values8.end(), decodedU8.begin(), decodedU8.end());
