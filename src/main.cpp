@@ -8,7 +8,7 @@ std::vector<uint32_t> read_values(const azgra::BasicStringView<char> &file)
 {
     std::vector<uint32_t> values = azgra::io::parse_by_lines<uint32_t>(file, [](const azgra::string::SmartStringView<char> &line)
     {
-        int value;
+        int value{};
         auto conversionResult = std::from_chars(line.begin(), line.end(), value);
         always_assert(conversionResult.ec != std::errc::invalid_argument);
         return static_cast<uint32_t > (value);
@@ -18,15 +18,14 @@ std::vector<uint32_t> read_values(const azgra::BasicStringView<char> &file)
 
 void test_fib(azgra::BasicStringView<char> inputFile)
 {
-    const auto fibSeq = generate_fibonacci_sequence(100);
     const auto values = read_values(inputFile);
 
     azgra::io::stream::OutMemoryBitStream encodedStream;
-    encode_fibonacci(encodedStream, values, fibSeq);
+    encode_fibonacci(encodedStream, values);
 
     const auto buffer = encodedStream.get_flushed_buffer();
     azgra::io::stream::InMemoryBitStream inStream(&buffer);
-    const auto decodedValues = decode_fibonacci<uint32_t>(inStream, fibSeq);
+    const auto decodedValues = decode_fibonacci<uint32_t>(inStream);
 
     const bool eq = std::equal(values.begin(), values.end(), decodedValues.begin(), decodedValues.end());
 
