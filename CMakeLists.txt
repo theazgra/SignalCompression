@@ -8,7 +8,7 @@ project(asc CXX)
 add_subdirectory(AzgraCppLibrary)
 
 
-add_executable(asc src/main.cpp)
+add_executable(asc src/main.cpp src/huffman.cpp)
 
 target_link_libraries(asc PRIVATE azgra)
 set_property(TARGET asc  PROPERTY CXX_STANDARD 17)

@@ -3,6 +3,8 @@
 #include <charconv>
 #include <azgra/utilities/binary_converter.h>
 #include <azgra/io/binary_file_functions.h>
+#include <azgra/io/stream/in_binary_file_stream.h>
+#include "huffman.h"
 
 std::vector<uint32_t> read_values(const azgra::BasicStringView<char> &file)
 {
@@ -24,7 +26,11 @@ void test_fib(azgra::BasicStringView<char> inputFile)
     encode_fibonacci(encodedStream, values);
 
     const auto buffer = encodedStream.get_flushed_buffer();
-    azgra::io::stream::InMemoryBitStream inStream(&buffer);
+
+    azgra::io::dump_bytes(buffer, "fibonacci.data");
+    const auto inBuffer = azgra::io::stream::InBinaryFileStream("fibonacci.data").consume_whole_file();
+
+    azgra::io::stream::InMemoryBitStream inStream(&inBuffer);
     const auto decodedValues = decode_fibonacci<uint32_t>(inStream);
 
     const bool eq = std::equal(values.begin(), values.end(), decodedValues.begin(), decodedValues.end());
@@ -53,7 +59,11 @@ void test_elias_gamma(azgra::BasicStringView<char> inputFile)
     encode_elias_gamma(encodedStream, values);
 
     const auto buffer = encodedStream.get_flushed_buffer();
-    azgra::io::stream::InMemoryBitStream inStream(&buffer);
+
+    azgra::io::dump_bytes(buffer, "elias.data");
+    const auto inBuffer = azgra::io::stream::InBinaryFileStream("elias.data").consume_whole_file();
+
+    azgra::io::stream::InMemoryBitStream inStream(&inBuffer);
     const auto decodedValues = decode_elias_gamma<uint32_t>(inStream);
 
     const bool eq = std::equal(values.begin(), values.end(), decodedValues.begin(), decodedValues.end());
@@ -74,25 +84,34 @@ void test_elias_gamma(azgra::BasicStringView<char> inputFile)
     }
 }
 
+void test_huffmann(azgra::BasicStringView<char> inputFile)
+{
+    const auto text = azgra::io::read_text_file(inputFile);
+    const auto textView = azgra::StringView(text);
+    const auto symbols = get_string_symbols_info(textView);
+    fprintf(stdout, "Found %lu symbols in %s.\n", symbols.size(), inputFile.data());
+    puts("before huf");
+    build_huffman_tree(symbols);
+    puts("after huf");
+//    std::map<char, SymbolInfo> map{
+//            {'E', SymbolInfo(1, 0.1f)},
+//            {'B', SymbolInfo(1, 0.2f)},
+//            {'A', SymbolInfo(1, 0.4f)},
+//            {'C', SymbolInfo(1, 0.2f)},
+//            {'D', SymbolInfo(1, 0.1f)},
+//    };
+
+//    Huffman huffman = build_huffman_tree(map);
+
+}
+
 int main(int, char **)
 {
-    test_elias_gamma("../data/uniform_8.txt");
-    test_fib("../data/uniform_8.txt");
-
-    test_elias_gamma("../data/gausian_8.txt");
-    test_fib("../data/gausian_8.txt");
-
-    test_elias_gamma("../data/exponential_8.txt");
-    test_fib("../data/exponential_8.txt");
-
-    test_elias_gamma("../data/uniform_16.txt");
-    test_fib("../data/uniform_16.txt");
-
-    test_elias_gamma("../data/gausian_16.txt");
-    test_fib("../data/gausian_16.txt");
-
-    test_elias_gamma("../data/exponential_16.txt");
-    test_fib("../data/exponential_16.txt");
+    test_huffmann("../data/czech.txt");
+    test_huffmann("../data/german.txt");
+    test_huffmann("../data/english.txt");
+    test_huffmann("../data/french.txt");
+    test_huffmann("../data/hungarian.txt");
 
     return 0;
 
