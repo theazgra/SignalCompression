@@ -4,21 +4,22 @@
 #include <azgra/azgra.h>
 #include <memory>
 #include <queue>
+#include <azgra/io/stream/memory_bit_stream.h>
 
 struct SymbolInfo
 {
-    size_t occurrenceCount{};
+    uint16_t occurrenceCount{};
     float probability{};
 
     SymbolInfo() = default;
 
 
-    explicit SymbolInfo(const size_t occurrence_) : occurrenceCount(occurrence_), probability(0.0f)
+    explicit SymbolInfo(const uint16_t occurrence_) : occurrenceCount(occurrence_), probability(0.0f)
     {
 
     }
 
-    explicit SymbolInfo(const size_t occurrence_, const float prob)
+    explicit SymbolInfo(const uint16_t occurrence_, const float prob)
             : occurrenceCount(occurrence_), probability(prob)
     {
 
@@ -36,6 +37,7 @@ struct HuffmanNode
     char symbol{};
     // Uninitialized to -1.
     int bit = -1;
+    bool isLeaf = false;
 
     std::shared_ptr<HuffmanNode> parentA{};
     std::shared_ptr<HuffmanNode> parentB{};
@@ -67,6 +69,19 @@ struct HuffmanNode
     {
         return symbol == other.symbol;
     }
+
+    std::shared_ptr<HuffmanNode> navigate(const bool bit)
+    {
+        if (parentA && parentA->bit == bit)
+        {
+            return parentA;
+        }
+        if (parentB && parentB->bit == bit)
+        {
+            return parentB;
+        }
+        always_assert(false && "Wrong huffman tree. Failed to navigate.");
+    }
 };
 
 struct HuffmanNodeComparerGreater
@@ -79,6 +94,7 @@ struct HuffmanNodeComparerGreater
 
 struct Huffman
 {
+    std::map<char, SymbolInfo> symbolMap;
     std::shared_ptr<HuffmanNode> root;
     std::map<char, std::vector<bool>> symbolCodes;
 };
@@ -86,4 +102,10 @@ struct Huffman
 
 std::map<char, SymbolInfo> get_string_symbols_info(const azgra::StringView &string);
 
-Huffman build_huffman_tree(const std::map<char, SymbolInfo> &symbolMap);
+Huffman build_huffman_tree(std::map<char, SymbolInfo> &symbolMap);
+
+void huffman_encode(azgra::io::stream::OutMemoryBitStream &stream,
+                    const Huffman &huffman,
+                    const azgra::StringView textToEncode);
+
+std::string huffman_decode(azgra::io::stream::InMemoryBitStream &stream);
