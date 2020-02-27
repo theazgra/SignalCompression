@@ -1,6 +1,37 @@
 #include <queue>
 #include "huffman.h"
 
+SymbolInfo &SymbolInfo::operator++()
+{
+    ++occurrenceCount;
+    return *this;
+}
+
+bool HuffmanNode::operator<(const HuffmanNode &other) const
+{ return (probability < other.probability); }
+
+bool HuffmanNode::operator==(const HuffmanNode &other) const
+{ return symbol == other.symbol; }
+
+bool FanoNode::operator<(const FanoNode &other) const
+{ return (probability < other.probability); }
+
+bool FanoNode::operator==(const FanoNode &other) const
+{ return (symbol == other.symbol); }
+
+std::shared_ptr<HuffmanNode> HuffmanNode::navigate(const bool bit)
+{
+    if (parentA && parentA->bit == bit)
+    {
+        return parentA;
+    }
+    if (parentB && parentB->bit == bit)
+    {
+        return parentB;
+    }
+    always_assert(false && "Wrong huffman tree. Failed to navigate.");
+}
+
 static void find_all_symbols(std::map<char, SymbolInfo> &symbolMap, const azgra::StringView &string)
 {
     for (char c : string)
@@ -75,6 +106,80 @@ static void create_symbol_code(const std::shared_ptr<HuffmanNode> &currentNode,
     }
 }
 
+static void split_fano_tree(std::vector<std::shared_ptr<FanoNode>> &nodes,
+                            const size_t fromIndex,
+                            const size_t toIndex)
+{
+    using namespace azgra::collection;
+    size_t bestSplitIndex = 0;
+    if ((toIndex - fromIndex) > 2)
+    {
+
+        float minDiff = std::numeric_limits<float>::max();
+        const auto selectNodeProb = [](std::shared_ptr<FanoNode> &node)
+        { return node->probability; };
+        for (size_t splitIndex = (fromIndex + 1); splitIndex < toIndex; ++splitIndex)
+        {
+            const float leftGroupCumulativeProbability = sum(nodes.begin() + fromIndex, (nodes.begin() + splitIndex), selectNodeProb, 0.0f);
+            const float rightGroupCumulativeProbability = sum((nodes.begin() + splitIndex), nodes.begin() + toIndex, selectNodeProb, 0.0f);
+
+            const float diff = abs(leftGroupCumulativeProbability - rightGroupCumulativeProbability);
+            if (diff < minDiff)
+            {
+                minDiff = diff;
+                bestSplitIndex = splitIndex;
+            }
+        }
+
+    }
+    else
+    {
+        bestSplitIndex = fromIndex + 1;
+    }
+
+    for (size_t i = fromIndex; i < toIndex; ++i)
+    {
+        nodes[i]->bits.push_back((i < bestSplitIndex));
+    }
+
+    const size_t leftGroupSize = (bestSplitIndex - fromIndex);
+    const size_t rightGroupSize = (toIndex - bestSplitIndex);
+
+    if (leftGroupSize > 1)
+    {
+        split_fano_tree(nodes, fromIndex, bestSplitIndex);
+    }
+    if (rightGroupSize > 1)
+    {
+        split_fano_tree(nodes, bestSplitIndex, toIndex);
+    }
+}
+
+Huffman build_fano_tree(std::map<char, SymbolInfo> &symbolMap)
+{
+    std::vector<std::shared_ptr<FanoNode>> nodes(symbolMap.size());
+    size_t index = 0;
+    // Initialize nodes from symbol map
+    for (const auto &[symbol, info] : symbolMap)
+    {
+        nodes[index++] = std::make_shared<FanoNode>(symbol, info.probability);
+    }
+
+    std::sort(nodes.begin(), nodes.end());
+
+    split_fano_tree(nodes, 0, nodes.size());
+
+    for (const auto &node : nodes)
+    {
+        std::cout << "Node: " << node->symbol << '\t';
+        for (const bool bit : node->bits)
+            std::cout << (bit ? 1 : 0);
+        std::cout << '\n';
+    }
+
+    puts("VOILA");
+}
+
 Huffman build_huffman_tree(std::map<char, SymbolInfo> &symbolMap)
 {
     // NOTE(Moravec):   We are not able to use std::unique_ptr with std::priority_queue
@@ -97,7 +202,6 @@ Huffman build_huffman_tree(std::map<char, SymbolInfo> &symbolMap)
         nodes.pop();
         auto parentB = nodes.top();
         nodes.pop();
-
 
         parentA->bit = 1;
         parentB->bit = 0;
