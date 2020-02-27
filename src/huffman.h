@@ -3,7 +3,7 @@
 #include <map>
 #include <azgra/azgra.h>
 #include <memory>
-#include <set>
+#include <queue>
 
 struct SymbolInfo
 {
@@ -66,6 +66,14 @@ struct HuffmanNode
     inline bool operator==(const HuffmanNode &other) const
     {
         return symbol == other.symbol;
+    }
+};
+
+struct HuffmanNodeComparerGreater
+{
+    inline bool operator()(const std::shared_ptr<HuffmanNode> &a, const std::shared_ptr<HuffmanNode> &b) const
+    {
+        return (a->probability > b->probability);
     }
 };
 

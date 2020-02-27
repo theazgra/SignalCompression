@@ -5,6 +5,7 @@
 #include <azgra/io/binary_file_functions.h>
 #include <azgra/io/stream/in_binary_file_stream.h>
 #include "huffman.h"
+#include <iostream>
 
 std::vector<uint32_t> read_values(const azgra::BasicStringView<char> &file)
 {
@@ -86,32 +87,41 @@ void test_elias_gamma(azgra::BasicStringView<char> inputFile)
 
 void test_huffmann(azgra::BasicStringView<char> inputFile)
 {
-    const auto text = azgra::io::read_text_file(inputFile);
-    const auto textView = azgra::StringView(text);
-    const auto symbols = get_string_symbols_info(textView);
-    fprintf(stdout, "Found %lu symbols in %s.\n", symbols.size(), inputFile.data());
-    puts("before huf");
-    build_huffman_tree(symbols);
-    puts("after huf");
-//    std::map<char, SymbolInfo> map{
-//            {'E', SymbolInfo(1, 0.1f)},
-//            {'B', SymbolInfo(1, 0.2f)},
-//            {'A', SymbolInfo(1, 0.4f)},
-//            {'C', SymbolInfo(1, 0.2f)},
-//            {'D', SymbolInfo(1, 0.1f)},
-//    };
+//    const auto text = azgra::io::read_text_file(inputFile);
+//    const auto textView = azgra::StringView(text);
+//    const auto symbols = get_string_symbols_info(textView);
+//    fprintf(stdout, "Found %lu symbols in %s.\n", symbols.size(), inputFile.data());
+//    puts("before huf");
+//    build_huffman_tree(symbols);
+//    puts("after huf");
+    std::map<char, SymbolInfo> map{
+            {'E', SymbolInfo(1, 0.5f)},
+            {'B', SymbolInfo(1, 0.4f)},
+            {'A', SymbolInfo(1, 0.3f)},
+            {'C', SymbolInfo(1, 0.2f)},
+            {'D', SymbolInfo(1, 0.1f)},
+    };
 
-//    Huffman huffman = build_huffman_tree(map);
+    Huffman huffman = build_huffman_tree(map);
 
+    for (const auto &[symbol, code] :huffman.symbolCodes)
+    {
+        std::cout << symbol << ": ";
+        for (const auto b : code)
+        {
+            std::cout << (b ? 1 : 0);
+        }
+        std::cout << '\n';
+    }
 }
 
 int main(int, char **)
 {
     test_huffmann("../data/czech.txt");
-    test_huffmann("../data/german.txt");
-    test_huffmann("../data/english.txt");
-    test_huffmann("../data/french.txt");
-    test_huffmann("../data/hungarian.txt");
+//    test_huffmann("../data/german.txt");
+//    test_huffmann("../data/english.txt");
+//    test_huffmann("../data/french.txt");
+//    test_huffmann("../data/hungarian.txt");
 
     return 0;
 

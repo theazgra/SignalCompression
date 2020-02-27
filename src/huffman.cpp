@@ -76,35 +76,41 @@ static void create_symbol_code(const std::shared_ptr<HuffmanNode> &currentNode,
 
 Huffman build_huffman_tree(const std::map<char, SymbolInfo> &symbolMap)
 {
-    std::set<std::shared_ptr<HuffmanNode>> nodeSet;
+    // NOTE(Moravec):   We are not able to use std::unique_ptr with std::priority_queue
+    //                  because top returns const&, which can't be moved.
+
+    std::priority_queue<std::shared_ptr<HuffmanNode>,
+            std::vector<std::shared_ptr<HuffmanNode>>,
+            HuffmanNodeComparerGreater> nodes;
 
     // Initialize nodes from symbol map
     for (const auto &[symbol, info] : symbolMap)
     {
-        nodeSet.insert(std::make_shared<HuffmanNode>(symbol, info.probability));
+        nodes.push(std::make_shared<HuffmanNode>(symbol, info.probability));
     }
 
-    while (nodeSet.size() != 1)
+    while (nodes.size() != 1)
     {
         // the lowest probability
-        auto parentA = *--nodeSet.end();
-        auto parentB = *--(--nodeSet.end());
+        auto parentA = nodes.top();
+        nodes.pop();
+        auto parentB = nodes.top();
+        nodes.pop();
+
 
         parentA->bit = 1;
         parentB->bit = 0;
 
-        nodeSet.erase(parentB);
-        nodeSet.erase(parentA);
-
         const float mergedProb = parentB->probability + parentA->probability;
         auto mergedNode = std::make_shared<HuffmanNode>(mergedProb, parentA, parentB);
-        nodeSet.insert(mergedNode);
+        nodes.push(mergedNode);
     }
-    always_assert(nodeSet.size() == 1);
+    always_assert(nodes.size() == 1);
 
     Huffman result = {};
-    result.root = *nodeSet.begin();
-    create_symbol_code(*nodeSet.begin(), {}, result.symbolCodes);
+    const auto rootNode = nodes.top();
+    result.root = rootNode;
+    create_symbol_code(rootNode, {}, result.symbolCodes);
 
     return result;
 }
