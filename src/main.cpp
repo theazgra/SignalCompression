@@ -3,6 +3,7 @@
 #include <azgra/io/binary_file_functions.h>
 #include <azgra/io/stream/in_binary_file_stream.h>
 #include <iostream>
+#include "generic_huffman.h"
 
 void test_huffmann(azgra::BasicStringView<char> inputFile)
 {
@@ -10,12 +11,16 @@ void test_huffmann(azgra::BasicStringView<char> inputFile)
     const auto textView = azgra::StringView(text);
     auto symbols = get_string_symbols_info(textView);
     size_t totalSymbolCount = 0;
+
+    std::vector<std::pair<char, size_t>> symbols2;
+
     for (const auto[symbol, info] : symbols)
     {
         totalSymbolCount += info.occurrenceCount;
+        symbols2.emplace_back(symbol, info.occurrenceCount);
     }
-    const Huffman huffman = build_huffman_tree(symbols);
 
+    const huffman::HuffmanTree huffman = huffman::build_huffman_tree(symbols2);
 
     azgra::io::stream::OutMemoryBitStream outBitStream;
     // We are passing symbols, so that we can write tree into the stream.
@@ -56,10 +61,10 @@ void test_huffmann(azgra::BasicStringView<char> inputFile)
 int main(int, char **)
 {
     /*
-     *  1) TODO: Which of these codes cannot be Huffman codes for any probability assignment and why?
-            a) {0, 10, 11}          SUM 2^-li = 1.0
-            b) {00, 01, 10, 110}    SUM 2^-li = 0.875
-            c) {01, 10}             SUM 2^-li = 0.5
+     *  1) Which of these codes cannot be Huffman codes for any probability assignment and why?
+            a) {0, 10, 11}          SUM 2^-li = 1.0     [YES]
+            b) {00, 01, 10, 110}    SUM 2^-li = 0.875   [NO] - Where is 0?
+            c) {01, 10}             SUM 2^-li = 0.5     [NO] - Huffman would generate {0,1}
         2) Classes of codes. Consider the code {0, 01}.
             a) Is it prefix code?                       [ NO], 0 is prefix of 01
             b) Is it uniquely decodable?                [YES] - extension is nonsingular
@@ -70,23 +75,26 @@ int main(int, char **)
             a) Can l=(2, 2, 3, 3) be the word lengths of a binary Huffman code?     [YES] (2^-2)+(2^-2)+(2^-3)+(2^-3) = 0.75 <= 1
      * */
 
-//    test_huffmann("../data/czech.txt");
-//    test_huffmann("../data/german.txt");
-//    test_huffmann("../data/english.txt");
-//    test_huffmann("../data/french.txt");
-//    test_huffmann("../data/hungarian.txt");
+    test_huffmann("../data/czech.txt");
+    test_huffmann("../data/german.txt");
+    test_huffmann("../data/english.txt");
+    test_huffmann("../data/french.txt");
+    test_huffmann("../data/hungarian.txt");
 
-    std::map<char, SymbolInfo> map{
-            {'1', SymbolInfo(1, 0.25f)},
-            {'2', SymbolInfo(1, 0.20f)},
-            {'3', SymbolInfo(1, 0.15f)},
-            {'4', SymbolInfo(1, 0.15f)},
-            {'5', SymbolInfo(1, 0.10f)},
-            {'6', SymbolInfo(1, 0.10f)},
-            {'7', SymbolInfo(1, 0.05f)},
-    };
+    // std::map<char, SymbolInfo> map{
+    //         {'1', SymbolInfo(1, 0.25f)},
+    //         {'2', SymbolInfo(1, 0.20f)},
+    //         {'3', SymbolInfo(1, 0.15f)},
+    //         {'4', SymbolInfo(1, 0.15f)},
+    //         {'5', SymbolInfo(1, 0.10f)},
+    //         {'6', SymbolInfo(1, 0.10f)},
+    //         {'7', SymbolInfo(1, 0.05f)},
+    // };
 
-    Huffman huffman = build_fano_tree(map);
+    // std::vector<std::pair<char, float>> symbols = { {'c',5.0f} };
+    // const auto huffman_tree = huffman::build_huffman_tree(symbols);
+
+    // Huffman huffman = build_fano_tree(map);
 //
 //    for (const auto &[symbol, code] :huffman.symbolCodes)
 //    {
