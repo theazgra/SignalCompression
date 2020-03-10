@@ -10,7 +10,7 @@
 namespace huffman
 {
 
-    template<typename SymbolType>
+    template<typename SymbolType = azgra::byte>
     struct HuffmanNode
     {
         SymbolType symbol{};
@@ -63,7 +63,7 @@ namespace huffman
         }
     };
 
-    template<typename SymbolType>
+    template<typename SymbolType = azgra::byte>
     struct HuffmanNodeComparerGreater
     {
         inline bool operator()(const std::shared_ptr<HuffmanNode<SymbolType>> &a, const std::shared_ptr<HuffmanNode<SymbolType>> &b) const
@@ -88,7 +88,7 @@ namespace huffman
         HuffmanSymbolInfo(const HuffmanSymbolInfo &) = delete;
     };
 
-    template<typename SymbolType>
+    template<typename SymbolType = azgra::byte>
     struct HuffmanTree
     {
         ////    std::map<char, SymbolInfo> symbolMap;
@@ -98,7 +98,7 @@ namespace huffman
 
     namespace
     {
-        template<typename SymbolType>
+        template<typename SymbolType = azgra::byte>
         static void create_symbol_code(const std::shared_ptr<HuffmanNode<SymbolType>> &currentNode,
                                        std::vector<bool> code,
                                        std::map<SymbolType, HuffmanSymbolInfo> &symbols)
@@ -126,7 +126,7 @@ namespace huffman
         }
     } // namespace
 
-    template<typename SymbolType>
+    template<typename SymbolType = azgra::byte>
     HuffmanTree<SymbolType> build_huffman_tree(const std::vector<std::pair<SymbolType, size_t>> &symbolOccurrences)
     {
         size_t totalSymbolOccurrence = azgra::collection::sum(symbolOccurrences.begin(),

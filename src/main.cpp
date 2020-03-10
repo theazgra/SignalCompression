@@ -60,20 +60,7 @@ void test_huffmann(azgra::BasicStringView<char> inputFile)
 
 int main(int, char **)
 {
-    /*
-     *  1) Which of these codes cannot be Huffman codes for any probability assignment and why?
-            a) {0, 10, 11}          SUM 2^-li = 1.0     [YES]
-            b) {00, 01, 10, 110}    SUM 2^-li = 0.875   [NO] - Where is 0?
-            c) {01, 10}             SUM 2^-li = 0.5     [NO] - Huffman would generate {0,1}
-        2) Classes of codes. Consider the code {0, 01}.
-            a) Is it prefix code?                       [ NO], 0 is prefix of 01
-            b) Is it uniquely decodable?                [YES] - extension is nonsingular
-            c) It it nonsingular?                       [YES] - different codes
 
-        3) Optimal word lengths.
-            a) Can l=(1, 2, 2) be the word lengths of a binary Huffman code?        [YES] (2^-1)+(2^-2)+(2^-2) = 1 <= 1
-            a) Can l=(2, 2, 3, 3) be the word lengths of a binary Huffman code?     [YES] (2^-2)+(2^-2)+(2^-3)+(2^-3) = 0.75 <= 1
-     * */
 
     test_huffmann("../data/czech.txt");
     test_huffmann("../data/german.txt");
