@@ -3,7 +3,6 @@
 #include "span.h"
 #include <type_traits>
 #include <vector>
-#include <algorithm>
 
 template<typename T>
 class ConstRingBufferIterator
@@ -171,10 +170,14 @@ public:
     void push(It begin, const It end)
     {
         static_assert(std::is_same_v<ItValueType, T>);
-        std::for_each(begin, end, [&](const T value)
+        for (;begin != end; ++begin)
         {
-            push(value);
-        });
+            push(*begin);
+        }
+//        std::for_each(begin, end, [&](const T value)
+//        {
+//            push(value);
+//        });
     }
 
     /**
