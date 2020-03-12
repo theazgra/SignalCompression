@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lz_tree.h"
+#include "ring_buffer.h"
 
 template<typename T>
 struct window
@@ -17,3 +18,4 @@ struct window
 
 
 void test();
+void test2();

@@ -2,6 +2,6 @@
 
 int main(int, char **)
 {
-    test();
+    test2();
     return 0;
 }

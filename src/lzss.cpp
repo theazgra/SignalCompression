@@ -59,3 +59,34 @@ void test()
     }
     puts("Added 3 nodes");
 }
+
+void test2()
+{
+    RingBuffer<int> ring(3);
+
+
+    int h;
+    ring.push(1); fprintf(stdout, "H=%i\n",ring.head());
+    ring.push(2); fprintf(stdout, "H=%i\n",ring.head());
+    ring.push(3); fprintf(stdout, "H=%i\n",ring.head());
+    ring.push(4); fprintf(stdout, "H=%i\n",ring.head());
+    ring.push(5); fprintf(stdout, "H=%i\n",ring.head());
+    ring.push(6); fprintf(stdout, "H=%i\n",ring.head());
+    ring.push(7); fprintf(stdout, "H=%i\n",ring.head());
+    ring.push(8); fprintf(stdout, "H=%i\n",ring.head());
+
+//    ring.push(9);
+//    ring.push(10);
+    std::vector<int> a = {1, 2, 3, 4, 5};
+    std::vector<int> b = {77, 88, 99};
+    ring.push(a.begin(), a.end());
+
+    ring.push(b.begin(), b.end());
+
+
+    auto begin = ring.head_iterator_begin();
+    for (int i = 0; i < ring.size(); ++i)
+    {
+        fprintf(stdout, "%i\n", *begin--);
+    }
+}
