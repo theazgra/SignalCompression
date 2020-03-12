@@ -62,31 +62,31 @@ void test()
 
 void test2()
 {
-    RingBuffer<int> ring(3);
+    RingBuffer<int> ring(4);
 
+    ring.push(1); always_assert(ring.head() == 1);
+    ring.push(2); always_assert(ring.head() == 1);
+    ring.push(3); always_assert(ring.head() == 1);
+    ring.push(4); always_assert(ring.head() == 1);
+    ring.push(5); always_assert(ring.head() == 2);
+    ring.push(6); always_assert(ring.head() == 3);
+    ring.push(7); always_assert(ring.head() == 4);
+    ring.push(8); always_assert(ring.head() == 5);
+    ring.push(9); always_assert(ring.head() == 6);
+    std::vector<int> b = {77, 88, 99, 101};
+    ring.push(b.begin(), b.end()); always_assert(ring.head() == 77);
 
-    int h;
-    ring.push(1); fprintf(stdout, "H=%i\n",ring.head());
-    ring.push(2); fprintf(stdout, "H=%i\n",ring.head());
-    ring.push(3); fprintf(stdout, "H=%i\n",ring.head());
-    ring.push(4); fprintf(stdout, "H=%i\n",ring.head());
-    ring.push(5); fprintf(stdout, "H=%i\n",ring.head());
-    ring.push(6); fprintf(stdout, "H=%i\n",ring.head());
-    ring.push(7); fprintf(stdout, "H=%i\n",ring.head());
-    ring.push(8); fprintf(stdout, "H=%i\n",ring.head());
-
-//    ring.push(9);
-//    ring.push(10);
-    std::vector<int> a = {1, 2, 3, 4, 5};
-    std::vector<int> b = {77, 88, 99};
-    ring.push(a.begin(), a.end());
-
-    ring.push(b.begin(), b.end());
-
+    const std::size_t offset = 3;
+    const std::size_t length = 3;
 
     auto begin = ring.head_iterator_begin();
-    for (int i = 0; i < ring.size(); ++i)
+    for (std::size_t i = 0; i < ring.size(); ++i)
     {
-        fprintf(stdout, "%i\n", *begin--);
+        fprintf(stdout, "%i\n", *begin++);
+    }
+
+    for (std::size_t i = 0; i < ring.size(); ++i)
+    {
+        fprintf(stdout, "%i\n", ring[i]);
     }
 }

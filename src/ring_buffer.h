@@ -30,7 +30,7 @@ public:
         m_ringBufferSize = ringBufferSize;
     }
 
-    ConstRingBufferIterator const &operator--()
+    ConstRingBufferIterator const &operator++()
     {
         if (++m_headPosition >= m_ringBufferSize)
         {
@@ -42,6 +42,16 @@ public:
     ConstRingBufferIterator operator++(int)
     {
         ConstRingBufferIterator result = *this;
+        if (++m_headPosition >= static_cast<long long> (m_ringBufferSize))
+        {
+            m_headPosition = 0;
+        }
+        return result;
+    }
+
+    ConstRingBufferIterator operator--(int)
+    {
+        ConstRingBufferIterator result = *this;
         if (--m_headPosition < 0)
         {
             m_headPosition = m_ringBufferSize - 1;
@@ -49,7 +59,7 @@ public:
         return result;
     }
 
-    ConstRingBufferIterator const &operator++()
+    ConstRingBufferIterator const &operator--()
     {
         if (--m_headPosition < 0)
         {
@@ -58,15 +68,6 @@ public:
         return *this;
     }
 
-    ConstRingBufferIterator operator--(int)
-    {
-        ConstRingBufferIterator result = *this;
-        if (++m_headPosition >= m_ringBufferSize)
-        {
-            m_headPosition = 0;
-        }
-        return result;
-    }
 
     bool operator==(const ConstRingBufferIterator &other) const
     {
@@ -106,25 +107,15 @@ private:
     long long m_tail{-1};
 
     /**
+     * Actual head index.
+     */
+    std::size_t m_head{0};
+
+    /**
      * Flag whether the buffer is already full.
      */
     bool m_fullBuffer{false};
 
-    /**
-     * Get the index of the head. The oldest element in the buffer.
-     * @return The index of the head.
-     */
-    [[nodiscard]] std::size_t head_index() const
-    {
-        if (!m_fullBuffer)
-        {
-            return 0;
-        }
-        else
-        {
-            return ((m_tail + 1) % m_bufferSize);
-        }
-    }
 
 public:
     /**
@@ -142,6 +133,12 @@ public:
         m_bufferSize = capacity;
     }
 
+    [[nodiscard]] inline T operator[](const std::size_t zeroBasedIndexFromHead) const
+    {
+        const auto index = ((m_head + zeroBasedIndexFromHead) % m_bufferSize);
+        return m_buffer[index];
+    }
+
     /**
      * Push single value to the ring buffer. Overwrite the oldest value if full.
      * @param value Value to push to the ring buffer.
@@ -154,6 +151,10 @@ public:
         {
             m_fullBuffer = true;
             m_tail = -1;
+        }
+        if (m_fullBuffer)
+        {
+            m_head = ((m_tail + 1) % m_bufferSize);
         }
     }
 
@@ -185,7 +186,7 @@ public:
         if (m_fullBuffer)
         { return m_bufferSize; }
         else
-        { return ((m_tail - head_index()) + 1); }
+        { return ((m_tail - m_head) + 1); }
     }
 
     /**
@@ -203,7 +204,7 @@ public:
      */
     [[nodiscard]] T head() const
     {
-        return m_buffer[head_index()];
+        return m_buffer[m_head];
     }
 
     /**
@@ -212,6 +213,6 @@ public:
      */
     [[nodiscard]] ConstRingBufferIterator<T> head_iterator_begin() const
     {
-        return ConstRingBufferIterator<T>(m_buffer.data(), head_index(), m_bufferSize);
+        return ConstRingBufferIterator<T>(m_buffer.data(), m_head, m_bufferSize);
     }
 };
