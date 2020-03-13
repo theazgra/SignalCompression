@@ -18,10 +18,10 @@ void test()
                                             'w', 'e', 'n', 't'};
 
     const size_t lookAheadSize = 4;
-    const byte_span bytes(bytesVector.data(), bytesVector.size());
+    const ByteSpan bytes(bytesVector.data(), bytesVector.size());
 
-    ByteLzNode root(bytes.sub_span(0, 4), bytes.size);
-    ByteLzTree tree(root);
+    //ByteLzNode root(bytes.sub_span(0, 4), bytes.size);
+    ByteLzTree tree(std::make_unique<ByteLzNode>(bytes.sub_span(0, 4), bytes.size));
 //    auto x = bytes.sub_span(0, 4);
 //    LzTree<azgra::byte> tree = ByteLzTree(x, bytes.size);
 
@@ -34,7 +34,7 @@ void test()
     std::vector<azgra::byte> toDelete = {'m', 'i', 'n', 'e',
                                          'f', 'r', 'o', 'm',
                                          'c', 'o', 'm', 'e'};
-    const byte_span toDeleteDS(toDelete.data(), toDelete.size());
+    const ByteSpan toDeleteDS(toDelete.data(), toDelete.size());
 
     // TODO( Update distances );
     for (int i = 0; i < 3; ++i)
@@ -50,7 +50,7 @@ void test()
                                       'q', 'w', 'r', 'y'};
 
 
-    const byte_span toAddDS(toAdd.data(), toAdd.size());
+    const ByteSpan toAddDS(toAdd.data(), toAdd.size());
     for (int i = 0; i < 3; ++i)
     {
         auto dataToAdd = toAddDS.sub_span(i * 4, 4);
@@ -62,31 +62,94 @@ void test()
 
 void test2()
 {
-    RingBuffer<int> ring(4);
-
-    ring.push(1); always_assert(ring.head() == 1);
-    ring.push(2); always_assert(ring.head() == 1);
-    ring.push(3); always_assert(ring.head() == 1);
-    ring.push(4); always_assert(ring.head() == 1);
-    ring.push(5); always_assert(ring.head() == 2);
-    ring.push(6); always_assert(ring.head() == 3);
-    ring.push(7); always_assert(ring.head() == 4);
-    ring.push(8); always_assert(ring.head() == 5);
-    ring.push(9); always_assert(ring.head() == 6);
-    std::vector<int> b = {77, 88, 99, 101};
-    ring.push(b.begin(), b.end()); always_assert(ring.head() == 77);
-
-    const std::size_t offset = 3;
-    const std::size_t length = 3;
-
-    auto begin = ring.head_iterator_begin();
-    for (std::size_t i = 0; i < ring.size(); ++i)
+    const size_t n = 10000000;
+    std::vector<int> x(n);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(0, 9999999);
+    for (int j = 0; j < n; ++j)
     {
-        fprintf(stdout, "%i\n", *begin++);
+        x[j] = dist(gen);
+    }
+    puts("generated random numbers");
+
+    RingBuffer<int> ring(512);
+
+    for (int i = 0; i < n; ++i)
+    {
+        ring.push(x[i]);
+        if (i % 500 == 0)
+        {
+            fprintf(stdout, "%i\n", ring.head());
+        }
+    }
+    puts("finished");
+}
+
+inline void push_to_ring_buffer(RingBuffer<azgra::byte> &ringBuffer,
+                                const azgra::ByteArray &inputBuffer,
+                                const std::size_t position,
+                                const std::size_t length)
+{
+    for (std::size_t i = 0; i < length; ++i)
+    {
+        ringBuffer.push(inputBuffer[position + i]);
+    }
+}
+
+azgra::ByteArray lzss_encode(const azgra::ByteArray &data, const azgra::byte searchBufferBits)
+{
+    // NOTE(Moravec):   We are going to cheat and hold the whole data buffer in memory
+    //                  instead of reading from the stream.
+
+    using namespace azgra::io::stream;
+    always_assert(searchBufferBits < 16 && "No bits left for look ahead buffer");
+
+    const std::size_t lookAheadBufferBits = 16 - searchBufferBits;
+
+    const auto searchBufferSize = static_cast<std::size_t > (pow(2, searchBufferBits));
+    const auto lookAheadBufferSize = static_cast<std::size_t > (pow(2, lookAheadBufferBits));
+    const std::size_t slidingWindowSize = searchBufferSize + lookAheadBufferSize;
+
+    std::size_t bufferSize = data.size();
+    std::size_t treeNodeCount = 1 + searchBufferSize - lookAheadBufferSize;
+
+    ByteLzTree searchTree;
+
+    std::size_t lastShift = 0;
+    SlidingWindow<azgra::byte> window(data.data(), -searchBufferSize, slidingWindowSize, searchBufferSize);
+    std::size_t bufferIndex = searchBufferSize;
+
+
+    ByteSpan searchSpan;
+    LzMatch searchMatch;
+    while (bufferIndex < bufferSize)
+    {
+        searchSpan = window.search_span();
+        searchMatch = searchTree.find_best_match(searchSpan);
+
+        if (searchMatch.length > 0)
+        {
+
+        }
+
+        // TODO: REPLACE
+        ++bufferIndex;
     }
 
-    for (std::size_t i = 0; i < ring.size(); ++i)
-    {
-        fprintf(stdout, "%i\n", ring[i]);
-    }
+
+}
+
+void test_lzss()
+{
+    const char *stringData = "abbabbbabaa";
+    //const char* stringData = "abaacbacbcca";
+    const std::size_t stringLen = strlen(stringData);
+    azgra::ByteArray inputData(stringLen);
+    std::memcpy(inputData.data(), stringData, stringLen);
+
+    const auto lzssEncodedData = lzss_encode(inputData, 11);
+
+    puts("are we done?");
+
 }

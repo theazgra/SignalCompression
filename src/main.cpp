@@ -2,6 +2,6 @@
 
 int main(int, char **)
 {
-    test2();
+    test_lzss();
     return 0;
 }

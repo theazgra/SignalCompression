@@ -2,20 +2,12 @@
 
 #include "lz_tree.h"
 #include "ring_buffer.h"
+#include "sliding_window.h"
+#include <random>
+#include <azgra/io/stream/memory_bit_stream.h>
 
-template<typename T>
-struct window
-{
-    T *start;
-    T *end;
-    std::size_t size;
+azgra::ByteArray lzss_encode(const azgra::ByteArray &data, const azgra::byte searchBufferBits);
 
-    explicit window(T *start_, T *end_, std::size_t size_) : start(start_), end(end_), size(size_)
-    {
-        always_assert(size == (end - start));
-    }
-};
-
-
+void test_lzss();
 void test();
 void test2();

@@ -72,4 +72,4 @@ struct span
 
 };
 
-typedef span<azgra::byte> byte_span;
+typedef span<azgra::byte> ByteSpan;
