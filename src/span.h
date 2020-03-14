@@ -21,38 +21,57 @@ struct span
 
     [[nodiscard]] bool operator==(const span<T> &other) const
     {
-        if (size != other.size)
-            return false;
-        for (size_t i = 0; i < size; ++i)
-        {
-            if (ptr[i] != other.ptr[i])
-            {
-                return false;
-            }
-        }
-        return true;
+        return (compare(other) == 0);
+//        if (size != other.size)
+//            return false;
+//        for (size_t i = 0; i < size; ++i)
+//        {
+//            if (ptr[i] != other.ptr[i])
+//            {
+//                return false;
+//            }
+//        }
+//        return true;
     }
 
     [[nodiscard]] bool operator!=(const span<T> &other) const
     {
+        return (compare(other) != 0);
         return !(*this == other);
     }
 
-    [[nodiscard]] bool operator<(const span<T> &other) const
+//    [[nodiscard]] bool operator<(const span<T> &other) const
+//    {
+//        const std::size_t toSize = std::min(size, other.size);
+//        for (size_t i = 0; i < toSize; ++i)
+//        {
+//            if (ptr[i] < other.ptr[i])
+//            { return true; }
+//            if (other.ptr[i] < ptr[i])
+//            { return false; }
+//        }
+//        if (size < other.size)
+//            return true;
+//        else if (other.size < size)
+//            return false;
+//        return false;
+//    }
+
+    [[nodiscard]] int compare(const span<T> &other) const
     {
         const std::size_t toSize = std::min(size, other.size);
         for (size_t i = 0; i < toSize; ++i)
         {
             if (ptr[i] < other.ptr[i])
-            { return true; }
+            { return -1; }
             if (other.ptr[i] < ptr[i])
-            { return false; }
+            { return 1; }
         }
         if (size < other.size)
-            return true;
+            return -1;
         else if (other.size < size)
-            return false;
-        return false;
+            return 1;
+        return 0;
     }
 
     [[nodiscard]] std::size_t match_length(const span<T> &other) const

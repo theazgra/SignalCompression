@@ -12,7 +12,7 @@ private:
     std::size_t m_end{0};
     std::size_t m_size{0};
     std::size_t m_delimiter{0};
-    std::size_t m_searchBufferSize{0};
+    std::size_t m_lookAheadBufferSize{0};
 public:
     SlidingWindow() = default;
 
@@ -26,7 +26,7 @@ public:
         m_end = beginIndex + windowSize;
         m_size = windowSize;
         m_delimiter = m_begin + searchBufferSize;
-        m_searchBufferSize = searchBufferSize;
+        m_lookAheadBufferSize = windowSize - searchBufferSize;
     }
 
     void slide(const std::size_t offset)
@@ -41,9 +41,21 @@ public:
         return m_data[m_delimiter + offsetFromLookAheadBuffer];
     }
 
-    inline span<T> search_span()
+    [[nodiscard]] inline span<T> span_from_delimiter(const long offset)
     {
-        span<T> searchSpan((m_data + m_delimiter), m_searchBufferSize);
+        // TODO(Moravec): When on end of the input buffer, create span of remaining size.
+        span<T> searchSpan((m_data + (m_delimiter + offset)), m_lookAheadBufferSize);
         return searchSpan;
+    }
+
+    [[nodiscard]] inline span<T> span_from_begin(const long offset)
+    {
+        span<T> searchSpan((m_data + (m_begin + offset)), m_lookAheadBufferSize);
+        return searchSpan;
+    }
+
+    [[nodiscard]] long begin_index() const
+    {
+        return m_begin;
     }
 };

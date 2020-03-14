@@ -21,14 +21,13 @@ void test()
     const ByteSpan bytes(bytesVector.data(), bytesVector.size());
 
     //ByteLzNode root(bytes.sub_span(0, 4), bytes.size);
-    ByteLzTree tree(std::make_unique<ByteLzNode>(bytes.sub_span(0, 4), bytes.size));
+    ByteLzTree tree(std::make_unique<ByteLzNode>(bytes.sub_span(0, 4)));
 //    auto x = bytes.sub_span(0, 4);
 //    LzTree<azgra::byte> tree = ByteLzTree(x, bytes.size);
 
     for (size_t offset = 4; offset < bytes.size; offset += lookAheadSize)
     {
-        auto child = std::make_unique<ByteLzNode>(bytes.sub_span(offset, lookAheadSize), bytes.size - offset);
-        tree.add_child(child);
+        tree.add_node(std::make_unique<ByteLzNode>(bytes.sub_span(offset, lookAheadSize)));
     }
 
     std::vector<azgra::byte> toDelete = {'m', 'i', 'n', 'e',
@@ -53,9 +52,7 @@ void test()
     const ByteSpan toAddDS(toAdd.data(), toAdd.size());
     for (int i = 0; i < 3; ++i)
     {
-        auto dataToAdd = toAddDS.sub_span(i * 4, 4);
-        auto newNode = std::make_unique<ByteLzNode>(dataToAdd, bytes.size - (lookAheadSize * (3 - i)));
-        tree.add_child(newNode);
+        tree.add_node(std::make_unique<ByteLzNode>(toAddDS.sub_span(i * 4, 4)));
     }
     puts("Added 3 nodes");
 }
@@ -97,59 +94,148 @@ inline void push_to_ring_buffer(RingBuffer<azgra::byte> &ringBuffer,
     }
 }
 
-azgra::ByteArray lzss_encode(const azgra::ByteArray &data, const azgra::byte searchBufferBits)
+azgra::ByteArray lzss_encode(const azgra::ByteArray &data,
+                             const azgra::byte windowBits,
+                             const azgra::byte searchBufferBits)
 {
     // NOTE(Moravec):   We are going to cheat and hold the whole data buffer in memory
     //                  instead of reading from the stream.
 
     using namespace azgra::io::stream;
-    always_assert(searchBufferBits < 16 && "No bits left for look ahead buffer");
+    // Size of the group. 8 Flags for 8 values or pairs.
+    const std::size_t GROUP_SIZE = 8;
 
-    const std::size_t lookAheadBufferBits = 16 - searchBufferBits;
+    always_assert(searchBufferBits < windowBits && "No bits left for look ahead buffer");
+
+    const std::size_t lookAheadBufferBits = (windowBits - searchBufferBits);
 
     const auto searchBufferSize = static_cast<std::size_t > (pow(2, searchBufferBits));
     const auto lookAheadBufferSize = static_cast<std::size_t > (pow(2, lookAheadBufferBits));
     const std::size_t slidingWindowSize = searchBufferSize + lookAheadBufferSize;
 
-    std::size_t bufferSize = data.size();
+    std::size_t inputBufferSize = data.size();
     std::size_t treeNodeCount = 1 + searchBufferSize - lookAheadBufferSize;
 
+    // Binary search tree.
     ByteLzTree searchTree;
 
-    std::size_t lastShift = 0;
+    // Last shift of the window.
+    std::size_t windowShift = 0;
+    // Sliding window.
     SlidingWindow<azgra::byte> window(data.data(), -searchBufferSize, slidingWindowSize, searchBufferSize);
-    std::size_t bufferIndex = searchBufferSize;
+    // Current input buffer index
+    std::size_t bufferIndex = lookAheadBufferSize;
 
+    // Encoder stream.
+    OutMemoryBitStream encoderStream;
+    // InterBuffer stream.
+    OutMemoryBitStream interBuffer;
 
+    // Flag buffer with its index.
+    azgra::byte flagBuffer = 0;
+    azgra::byte flagBufferIndex = 0;
+
+    // String being searched.
     ByteSpan searchSpan;
+    // Match in the binary tree.
     LzMatch searchMatch;
-    while (bufferIndex < bufferSize)
+    std::size_t maxSizeMatch = 0;
+    std::size_t tripletCount = 0;
+    while (bufferIndex < inputBufferSize)
     {
-        searchSpan = window.search_span();
-        searchMatch = searchTree.find_best_match(searchSpan);
-
-        if (searchMatch.length > 0)
+        if (bufferIndex < (2 * lookAheadBufferSize))
         {
+            // Before we get at least L elements in search buffer encode values with char code (0,'A')
+            azgra::byte byteToEncode = window[0];
+            flagBuffer |= RAW_BYTE_FLAG << flagBufferIndex++;
+            interBuffer.write_aligned_byte(byteToEncode);
+            windowShift = 1;
+        }
+        else
+        {
+            // Create nodes in the tree. Node count to add and remove is equivalent to lastShift value.
+            {
+                const auto windowBeginIndex = window.begin_index();
+                for (std::size_t nodeIndex = 0; nodeIndex < windowShift; ++nodeIndex)
+                {
+                    // Create span for node. Offset from the delimiter backwards.
+                    searchTree.add_node(
+                            std::make_unique<ByteLzNode>(window.span_from_delimiter(-static_cast<long>(lookAheadBufferSize + nodeIndex))));
 
+                    if (windowBeginIndex > 0)
+                    {
+                        // If the sliding window is full removed oldest entries.
+                        const long offset = static_cast<long>(windowShift) - (static_cast<long> (nodeIndex + 1));
+                        const auto dataToDelete = window.span_from_begin(-offset);
+
+//                        assert(searchTree.has_node_with_data(dataToDelete) && "Failed to find node supposted to be in tree");
+
+                        const bool deleted = searchTree.delete_node(dataToDelete);
+                        assert(deleted);
+                    }
+                }
+            }
+
+            searchSpan = window.span_from_delimiter(0);
+            searchMatch = searchTree.find_best_match(searchSpan);
+
+            if (searchMatch.length > 1)
+            {
+                ++tripletCount;
+                maxSizeMatch = std::max(maxSizeMatch, searchMatch.length);
+//                azgra::print_if((searchMatch.length > 2), "Found match of size: %lu\n", searchMatch.length);
+                // Write pair (distance,length)
+                flagBuffer |= PAIR_FLAG << flagBufferIndex++;
+                interBuffer.write_value(searchMatch.distance, searchBufferBits);
+                interBuffer.write_value(searchMatch.length, lookAheadBufferBits);
+                windowShift = searchMatch.length;
+            }
+            else
+            {
+                // Write RAW byte
+                flagBuffer |= RAW_BYTE_FLAG << flagBufferIndex++;
+                interBuffer.write_aligned_byte(searchSpan.ptr[0]);
+                windowShift = 1;
+            }
         }
 
-        // TODO: REPLACE
-        ++bufferIndex;
+        bufferIndex += windowShift;
+        window.slide(windowShift);
+
+        assert(flagBufferIndex <= GROUP_SIZE);
+        if (flagBufferIndex == GROUP_SIZE)
+        {
+            // Flush flag buffer and inter buffer to encoder stream.
+            encoderStream.write_aligned_byte(flagBuffer);
+            interBuffer.copy_aligned_buffer_and_reset(encoderStream);
+
+            flagBufferIndex = 0;
+            flagBuffer = 0;
+        }
     }
+
+    if (flagBufferIndex > 0)
+    {
+        // Flush flag buffer and inter buffer to encoder stream.
+        encoderStream.write_aligned_byte(flagBuffer);
+        interBuffer.copy_aligned_buffer_and_reset(encoderStream);
+    }
+
+    //maxSizeMatch
+    const auto encodedSize = encoderStream.get_flushed_buffer().size();
+    const double bps = static_cast<double>(encodedSize * 16) / static_cast<double> (inputBufferSize);
+    puts("Finished some compression...");
 
 
 }
 
-void test_lzss()
+void test_lzss(const char *inputFile)
 {
-    const char *stringData = "abbabbbabaa";
-    //const char* stringData = "abaacbacbcca";
-    const std::size_t stringLen = strlen(stringData);
-    azgra::ByteArray inputData(stringLen);
-    std::memcpy(inputData.data(), stringData, stringLen);
+    using namespace azgra::io::stream;
 
-    const auto lzssEncodedData = lzss_encode(inputData, 11);
+    azgra::ByteArray inputData = InBinaryFileStream(inputFile).consume_whole_file();
+
+    const auto lzssEncodedData = lzss_encode(inputData, 32, 27);
 
     puts("are we done?");
-
 }
