@@ -16,6 +16,3 @@ azgra::ByteArray lzss_encode(const azgra::ByteArray &data,
 
 void test_lzss(const char* inputFile);
 
-void test();
-
-void test2();

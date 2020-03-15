@@ -36,16 +36,20 @@ public:
         m_delimiter += offset;
     }
 
-    inline T operator[](const long offsetFromLookAheadBuffer)
+    inline T operator[](const long offsetFromLookAheadBuffer) const
     {
         return m_data[m_delimiter + offsetFromLookAheadBuffer];
     }
 
+    [[nodiscard]] inline Span<T> span_from_delimiter(const long offset, const std::size_t spanSize)
+    {
+        Span<T> searchSpan((m_data + (m_delimiter + offset)), spanSize);
+        return searchSpan;
+    }
+
     [[nodiscard]] inline Span<T> span_from_delimiter(const long offset)
     {
-        // TODO(Moravec): When on end of the input buffer, create Span of remaining size.
-        Span<T> searchSpan((m_data + (m_delimiter + offset)), m_lookAheadBufferSize);
-        return searchSpan;
+        return span_from_delimiter(offset, m_lookAheadBufferSize);
     }
 
     [[nodiscard]] inline Span<T> span_from_begin(const long offset)

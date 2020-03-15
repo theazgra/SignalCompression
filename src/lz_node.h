@@ -179,34 +179,24 @@ private:
      */
     void find_best_match(const Span<T> &targetData, LzMatch &bestMatch) const
     {
-        const int compare = targetData.lexicographic_compare(m_data, targetData.size);
-        // Target data matches this node data.
-        if (compare == 0)
+        if (m_data[0] == targetData[0])
         {
-            bestMatch.distance = targetData.ptr - m_data.ptr;
-            bestMatch.length = targetData.size;
-            return;
+            const std::size_t matchLength = m_data.match_length(targetData);
+            if (matchLength > bestMatch.length)
+            {
+                bestMatch.distance = targetData.ptr - m_data.ptr;
+                bestMatch.length = matchLength;
+            }
         }
 
-        // This node has lesser child and target data are smaller.
-        if (m_lesser && (compare < 0))
+        const int compare = targetData.lexicographic_compare(m_data);
+        if (m_lesser && (compare < 0)) // This node has lesser child and target data are smaller.
         {
             m_lesser->find_best_match(targetData, bestMatch);
-            return;
         }
-
-        // This node has greater child and target data are greater.
-        if (m_greater && (compare > 0))
+        else if (m_greater && (compare > 0)) // This node has greater child and target data are greater.
         {
             m_greater->find_best_match(targetData, bestMatch);
-            return;
-        }
-
-        const std::size_t matchLength = m_data.match_length(targetData);
-        if (matchLength > bestMatch.length)
-        {
-            bestMatch.distance = targetData.ptr - m_data.ptr;
-            bestMatch.length = matchLength;
         }
     }
 
@@ -240,6 +230,12 @@ private:
             auto parent = nodeToDelete->m_parent;
             const NodeDeletionResult result = parent->delete_child(nodeToDelete);
             assert(result == NodeDeletionResult::NodeDeleted);
+
+            if (m_lesser)
+                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
+            if (m_greater)
+                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
+
             return result;
         }
         else if (nodeToDelete->m_lesser && !nodeToDelete->m_greater) // Node has only lesser child
@@ -249,6 +245,12 @@ private:
             auto newChild = std::move(nodeToDelete->m_lesser);
             const bool result = parent->swap_child(nodeToDelete, newChild);
             assert(result);
+
+            if (m_lesser)
+                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
+            if (m_greater)
+                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
+
             return result ? NodeDeletionResult::NodeDeleted : NodeDeletionResult::NodeNotFound;
         }
         else if (nodeToDelete->m_greater && !nodeToDelete->m_lesser) // Node has only greater child
@@ -257,6 +259,11 @@ private:
             assert(parent != nullptr);
             auto newChild = std::move(nodeToDelete->m_greater);
             const bool result = parent->swap_child(nodeToDelete, newChild);
+
+            if (m_lesser)
+                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
+            if (m_greater)
+                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
 
             assert(result);
             return result ? NodeDeletionResult::NodeDeleted : NodeDeletionResult::NodeNotFound;
@@ -275,6 +282,11 @@ private:
 
             nodeToDelete->m_data = successorSpan;
             nodeToDelete->m_lives = successorLives;
+
+            if (m_lesser)
+                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
+            if (m_greater)
+                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
 
             return successorDeletion;
         }

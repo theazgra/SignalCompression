@@ -80,14 +80,12 @@ public:
                 m_root->m_parent = nullptr;
 
                 deletionResult = NodeDeletionResult::NodeDeleted;
+
                 if (m_root->m_lesser)
-                {
-                    assert(m_root->m_lesser->m_data.lexicographic_compare(m_root->m_data) <= 0);
-                }
+                    assert(m_root->m_lesser->m_data.lexicographic_compare(m_root->m_data) < 0);
                 if (m_root->m_greater)
-                {
-                    assert(m_root->m_greater->m_data.lexicographic_compare(m_root->m_data) > 0);
-                }
+                    assert(m_root->m_data.lexicographic_compare(m_root->m_greater->m_data) < 0);
+
             }
             else if (m_root->m_greater && !m_root->m_lesser)
             {
@@ -99,13 +97,9 @@ public:
                 deletionResult = NodeDeletionResult::NodeDeleted;
 
                 if (m_root->m_lesser)
-                {
-                    assert(m_root->m_lesser->m_data.lexicographic_compare(m_root->m_data) <= 0);
-                }
+                    assert(m_root->m_lesser->m_data.lexicographic_compare(m_root->m_data) < 0);
                 if (m_root->m_greater)
-                {
-                    assert(m_root->m_greater->m_data.lexicographic_compare(m_root->m_data) > 0);
-                }
+                    assert(m_root->m_data.lexicographic_compare(m_root->m_greater->m_data) < 0);
             }
             else
             {
@@ -119,6 +113,11 @@ public:
                 assert(deletedSuccessorNode == NodeDeletionResult::NodeDeleted);
 
                 deletionResult = deletedSuccessorNode;
+
+                if (m_root->m_lesser)
+                    assert(m_root->m_lesser->m_data.lexicographic_compare(dataToDelete) < 0);
+                if (m_root->m_greater)
+                    assert(dataToDelete.lexicographic_compare(m_root->m_greater->m_data) < 0);
 
                 m_root->m_data = successorSpan;
                 m_root->m_lives = successorLives;

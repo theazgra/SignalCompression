@@ -30,7 +30,13 @@ struct LexicographicSpanComparer<azgra::byte>
 {
     [[nodiscard]] inline int operator()(const azgra::byte *aData, const azgra::byte *bData, const std::size_t count) const
     {
-        return std::memcmp(aData, bData, count);
+        const int result = std::memcmp(aData, bData, count);
+        if (result == 0)
+            return 0;
+        else if (result < 0)
+            return -1;
+        else
+            return 1;
     }
 };
 
@@ -79,6 +85,11 @@ struct Span
     [[nodiscard]] Span<T> sub_span(const std::size_t offset, const std::size_t subSpanSize) const
     {
         return Span<T>(ptr + offset, subSpanSize);
+    }
+
+    [[nodiscard]] inline T operator[](const std::size_t index) const
+    {
+        return ptr[index];
     }
 
     [[nodiscard]] inline bool operator==(const Span<T> &other) const
@@ -141,6 +152,7 @@ struct Span
     {
         assert(other.size <= size);
         std::size_t len = 0;
+
         for (size_t i = 0; i < other.size; ++i)
         {
             if (ptr[i] != other.ptr[i])
