@@ -271,6 +271,7 @@ private:
             const int successorLives = successor->m_lives;
 
             const NodeDeletionResult successorDeletion = delete_node(successorSpan, true);
+            assert(successorDeletion == NodeDeletionResult::NodeDeleted);
 
             nodeToDelete->m_data = successorSpan;
             nodeToDelete->m_lives = successorLives;
