@@ -1,6 +1,6 @@
 #pragma once
 
-#include "span.h"
+#include "Span.h"
 #include <memory>
 
 template<typename T>
@@ -41,16 +41,16 @@ public:
         return m_data[m_delimiter + offsetFromLookAheadBuffer];
     }
 
-    [[nodiscard]] inline span<T> span_from_delimiter(const long offset)
+    [[nodiscard]] inline Span<T> span_from_delimiter(const long offset)
     {
-        // TODO(Moravec): When on end of the input buffer, create span of remaining size.
-        span<T> searchSpan((m_data + (m_delimiter + offset)), m_lookAheadBufferSize);
+        // TODO(Moravec): When on end of the input buffer, create Span of remaining size.
+        Span<T> searchSpan((m_data + (m_delimiter + offset)), m_lookAheadBufferSize);
         return searchSpan;
     }
 
-    [[nodiscard]] inline span<T> span_from_begin(const long offset)
+    [[nodiscard]] inline Span<T> span_from_begin(const long offset)
     {
-        span<T> searchSpan((m_data + (m_begin + offset)), m_lookAheadBufferSize);
+        Span<T> searchSpan((m_data + (m_begin + offset)), m_lookAheadBufferSize);
         return searchSpan;
     }
 
