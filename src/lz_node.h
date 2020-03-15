@@ -1,29 +1,48 @@
 #pragma once
 
-#include "span.h"
+#include "Span.h"
 #include <memory>
 
+/**
+ * Match in the LZSS Binary Search Tree.
+ */
 struct LzMatch
 {
+    /**
+     * Distance to the matched string.
+     */
     std::size_t distance{0};
+    /**
+     * Length of the matched string.
+     */
     std::size_t length{0};
 
     LzMatch() = default;
 
+    /**
+     * Create the match.
+     * @param dist Distance to the matched string.
+     * @param len Length of the match.
+     */
     explicit LzMatch(const std::size_t dist, std::size_t len) : distance(dist), length(len)
     {}
-
-    [[nodiscard]] bool operator<(const LzMatch &other) const
-    {
-        return (length < other.length);
-    }
-
-    [[nodiscard]] bool operator>(const LzMatch &other) const
-    {
-        return (distance > other.distance);
-    }
 };
 
+/**
+ * Flags for node deletion results.
+ */
+enum NodeDeletionResult
+{
+    NodeDeleted,
+    NodeSurvived,
+    NodeNotFound,
+    UnknownError
+};
+
+/**
+ * Node of the LZSS Binary Search Tree.
+ * @tparam T Type of the node data.
+ */
 template<typename T = azgra::byte>
 class LzNode
 {
@@ -32,49 +51,45 @@ private:
     friend
     class LzTree;
 
-    span<T> m_nodeDataSpan{};
-    LzNode<T> *m_parent{};
+    /**
+     * Non-owning node data.
+     */
+    Span<T> m_data{};
+
+    /**
+     * Pointer to the node parent.
+     */
+    LzNode<T> *m_parent{nullptr};
+
+    /**
+     * Lesser (left) child.
+     */
     std::unique_ptr<LzNode<T>> m_lesser{};
+
+    /**
+     * Greater (right) child.
+     */
     std::unique_ptr<LzNode<T>> m_greater{};
-    bool m_isRoot{false};
 
-    void traverse_best_match(const span<T> &targetData, LzMatch &bestMatch) const
+    /**
+     * Number of lives of the current node.
+     */
+    int m_lives{1};
+
+
+    /**
+     * Find node in the subtree of current node by its data.
+     * @param targetNodeData Target node data.
+     * @return Pointer to found node.
+     */
+    LzNode<T> *find_node_by_data(const Span<T> &targetNodeData)
     {
-        const int compare = targetData.compare(m_nodeDataSpan);
-        if (compare == 0)
-        {
-            bestMatch.distance = targetData.ptr - m_nodeDataSpan.ptr;
-            bestMatch.length = targetData.size;
-            return;
-        }
-        else if (m_lesser && (compare < 0))
-        {
-            m_lesser->traverse_best_match(targetData, bestMatch);
-        }
-        else if (m_greater && (compare > 0))
-        {
-            m_greater->traverse_best_match(targetData, bestMatch);
-        }
-        else
-        {
-            const std::size_t matchLength = m_nodeDataSpan.match_length(targetData);
-            if (matchLength > bestMatch.length)
-            {
-                bestMatch.distance = targetData.ptr - m_nodeDataSpan.ptr;
-                bestMatch.length = matchLength;
-            }
-        }
-    }
-
-
-    LzNode<T> *find_node_by_data(const span<T> &targetNodeData)
-    {
-        int compare = targetNodeData.compare(m_nodeDataSpan);
+        int compare = targetNodeData.lexicographic_compare(m_data);
         if (compare == 0)
         {
             return this;
         }
-        if (m_lesser && (compare <= 0))
+        if (m_lesser && (compare < 0))
         {
             return m_lesser->find_node_by_data(targetNodeData);
         }
@@ -82,32 +97,48 @@ private:
         {
             return m_greater->find_node_by_data(targetNodeData);
         }
-        else return nullptr;
+        else
+        {
+            // NOTE(Moravec): This should not happen.
+            assert(false);
+            return nullptr;
+        }
     }
 
-    bool delete_child(LzNode<T> *node)
+    /**
+     * Delete child node from this node.
+     * @param node Node to delete.
+     * @return Result of deletion.
+     */
+    NodeDeletionResult delete_child(LzNode<T> *node)
     {
         if (m_lesser && (m_lesser.get() == node))
         {
-            assert(m_lesser->m_nodeDataSpan == node->m_nodeDataSpan);
+            assert(m_lesser->m_data == node->m_data);
             m_lesser.release();
-            return true;
+            return NodeDeletionResult::NodeDeleted;
         }
         if (m_greater && (m_greater.get() == node))
         {
-            assert(m_greater->m_nodeDataSpan == node->m_nodeDataSpan);
+            assert(m_greater->m_data == node->m_data);
             m_greater.release();
-            return true;
+            return NodeDeletionResult::NodeDeleted;
         }
-        return false;
+        return NodeDeletionResult::NodeNotFound;
     }
 
-    bool swap_my_child(LzNode<T> *oldChild, std::unique_ptr<LzNode<T>> &newChild)
+    /**
+     * Swap child of this node.
+     * @param oldChild The old child node.
+     * @param newChild The new child / replacement node.
+     * @return True if node was swapped.
+     */
+    bool swap_child(LzNode<T> *oldChild, std::unique_ptr<LzNode<T>> &newChild)
     {
         if (m_lesser && (m_lesser.get() == oldChild))
         {
-            assert(m_lesser->m_nodeDataSpan == oldChild->m_nodeDataSpan);
-            assert(newChild->m_nodeDataSpan.compare(m_nodeDataSpan) <= 0);
+            assert(m_lesser->m_data == oldChild->m_data);
+            assert(newChild->m_data.lexicographic_compare(m_data) < 0);
 
             m_lesser = std::move(newChild);
             m_lesser->m_parent = this;
@@ -115,8 +146,8 @@ private:
         }
         if (m_greater && (m_greater.get() == oldChild))
         {
-            assert(m_greater->m_nodeDataSpan == oldChild->m_nodeDataSpan);
-            assert(m_nodeDataSpan.compare(newChild->m_nodeDataSpan) <= 0);
+            assert(m_greater->m_data == oldChild->m_data);
+            assert(m_data.lexicographic_compare(newChild->m_data) < 0);
 
             m_greater = std::move(newChild);
             m_greater->m_parent = this;
@@ -125,10 +156,13 @@ private:
         return false;
     }
 
+    /**
+     * Find inorder (the smallest greater node.) successor if this node.
+     * @return Pointer to the inorder successor.
+     */
     LzNode<T> *find_inorder_successor() const
     {
-        always_assert(m_greater);
-
+        assert(m_greater);
         auto *successor = m_greater.get();
         while (successor->m_lesser)
         {
@@ -137,43 +171,75 @@ private:
         return successor;
     }
 
-//    LzNode<T> *find_left_most_on_right_side(LzNode<T> *node) const
-//    {
-//        if (node->m_greater)
-//        {
-//            return find_left_most_on_right_side(node->m_greater.get());
-//        }
-//        else if (node->m_lesser)
-//        {
-//            return node->m_lesser.get();
-//        }
-//        else
-//        {
-//            return node;
-//        }
-//    }
-
-    [[nodiscard]] LzMatch find_best_match(const span<T> &data) const
+    // TODO(Moravec): FIXME
+    /**
+     * Find best match for the target data. Will sue data.size for comparision.
+     * @param targetData Target data.
+     * @return Best match.
+     */
+    void find_best_match(const Span<T> &targetData, LzMatch &bestMatch) const
     {
-        LzMatch bestMatch;
-        traverse_best_match(data, bestMatch);
-        return bestMatch;
+        const int compare = targetData.lexicographic_compare(m_data, targetData.size);
+        // Target data matches this node data.
+        if (compare == 0)
+        {
+            bestMatch.distance = targetData.ptr - m_data.ptr;
+            bestMatch.length = targetData.size;
+            return;
+        }
+
+        // This node has lesser child and target data are smaller.
+        if (m_lesser && (compare < 0))
+        {
+            m_lesser->find_best_match(targetData, bestMatch);
+            return;
+        }
+
+        // This node has greater child and target data are greater.
+        if (m_greater && (compare > 0))
+        {
+            m_greater->find_best_match(targetData, bestMatch);
+            return;
+        }
+
+        const std::size_t matchLength = m_data.match_length(targetData);
+        if (matchLength > bestMatch.length)
+        {
+            bestMatch.distance = targetData.ptr - m_data.ptr;
+            bestMatch.length = matchLength;
+        }
     }
 
-    bool delete_node(const span<T> &dataToDelete, LzNode<T> *ancestor = nullptr)
+    /**
+     * Delete node from this node or its subtree.
+     * @param dataToDelete Target node data.
+     * @param forceDeletion True if to force the deletion, ignore node lives.
+     * @return Node deletion result.
+     */
+    NodeDeletionResult delete_node(const Span<T> &dataToDelete, const bool forceDeletion = false)
     {
-        auto nodeToDelete = (ancestor != nullptr) ? ancestor->find_node_by_data(dataToDelete) : find_node_by_data(dataToDelete);
+        // Find node to delete.
+        auto nodeToDelete = find_node_by_data(dataToDelete);
         if (!nodeToDelete)
         {
-            assert(false && "Didn't find node to delete.");
-            return false;
+            always_assert(false && "Didn't find node to delete.");
+            return NodeDeletionResult::NodeNotFound;
+        }
+
+        if (--nodeToDelete->m_lives > 0)
+        {
+            // NOTE(Moravec): Node still have one or more lives. Node won't be deleted
+            if (!forceDeletion)
+            {
+                return NodeDeletionResult::NodeSurvived;
+            }
         }
 
         if (!nodeToDelete->m_lesser && !nodeToDelete->m_greater) // Node doesn't have children.
         {
             auto parent = nodeToDelete->m_parent;
-            const bool result = parent->delete_child(nodeToDelete);
-            assert(result);
+            const NodeDeletionResult result = parent->delete_child(nodeToDelete);
+            assert(result == NodeDeletionResult::NodeDeleted);
             return result;
         }
         else if (nodeToDelete->m_lesser && !nodeToDelete->m_greater) // Node has only lesser child
@@ -181,84 +247,111 @@ private:
             auto parent = nodeToDelete->m_parent;
             assert(parent != nullptr);
             auto newChild = std::move(nodeToDelete->m_lesser);
-            const bool result = parent->swap_my_child(nodeToDelete, newChild);
-
+            const bool result = parent->swap_child(nodeToDelete, newChild);
             assert(result);
-            return result;
+            return result ? NodeDeletionResult::NodeDeleted : NodeDeletionResult::NodeNotFound;
         }
         else if (nodeToDelete->m_greater && !nodeToDelete->m_lesser) // Node has only greater child
         {
             auto parent = nodeToDelete->m_parent;
             assert(parent != nullptr);
             auto newChild = std::move(nodeToDelete->m_greater);
-            const bool result = parent->swap_my_child(nodeToDelete, newChild);
-
-
+            const bool result = parent->swap_child(nodeToDelete, newChild);
 
             assert(result);
-            return result;
+            return result ? NodeDeletionResult::NodeDeleted : NodeDeletionResult::NodeNotFound;
         }
         else // Node has both children.
         {
-//            return true;
+            // Find inorder successor.
             LzNode<T> *successor = nodeToDelete->find_inorder_successor();
-            const auto successorSpan = successor->m_nodeDataSpan;
+            assert(successor != nullptr);
 
-            const bool deletedSuccessorNode = delete_node(successorSpan, nodeToDelete->m_greater.get());
-            assert(deletedSuccessorNode);
+            const auto successorSpan = successor->m_data;
+            const int successorLives = successor->m_lives;
 
-            nodeToDelete->m_nodeDataSpan = successorSpan;
-            return true;
+            const NodeDeletionResult successorDeletion = delete_node(successorSpan, true);
+
+            nodeToDelete->m_data = successorSpan;
+            nodeToDelete->m_lives = successorLives;
+
+            return successorDeletion;
         }
     }
 
-    void add_child(std::unique_ptr<LzNode<T>> &newNode)
+    /**
+     * Add child to the current node or its subtree.
+     * @param nodeData New node data.
+     */
+    void add_child(Span<T> &&nodeData)
     {
-        if (newNode->m_nodeDataSpan.compare(m_nodeDataSpan) <= 0)
+        // Compare new node data to this node data.
+        const int compare = nodeData.lexicographic_compare(m_data);
+        if (compare == 0)
+        {
+            // NOTE(Moravec): Data is duplicate, update this node lives and data.
+            m_data = nodeData;
+            m_lives += 1;
+        }
+        else if (compare < 0)
         {
             if (!m_lesser)
             {
-                newNode->m_parent = this;
-                m_lesser = std::move(newNode);
-                assert(m_lesser->m_nodeDataSpan.compare(m_nodeDataSpan) <= 0);
+                m_lesser = std::make_unique<LzNode<T>>(std::move(nodeData));
+                m_lesser->m_parent = this;
+                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
             }
             else
             {
-                m_lesser->add_child(newNode);
+                m_lesser->add_child(std::move(nodeData));
             }
         }
         else
         {
+            assert(compare > 0);
             if (!m_greater)
             {
-                newNode->m_parent = this;
-                m_greater = std::move(newNode);
-                assert(m_nodeDataSpan.compare(m_greater->m_nodeDataSpan) <= 0);
+                m_greater = std::make_unique<LzNode<T>>(std::move(nodeData));
+                m_greater->m_parent = this;
+                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
             }
             else
             {
-                m_greater->add_child(newNode);
+                m_greater->add_child(std::move(nodeData));
             }
         }
     }
 
 public:
+    /**
+     * Default node constructor.
+     */
     LzNode() = default;
 
-    explicit LzNode(span<T> &&data)
+    /**
+     * Create node with its data.
+     * @param data Node data.
+     */
+    explicit LzNode(Span<T> &&data)
     {
-        m_nodeDataSpan = std::move(data);
+        m_data = std::move(data);
     }
 
-
-    [[nodiscard]] bool has_node_with_data(const span<T> &nodeData)
+    /**
+     * Check if this node or its subtree has this data.
+     * @param nodeData Target node data.
+     * @return True if node with data exists.
+     */
+    [[nodiscard]] bool has_node_with_data(const Span<T> &nodeData)
     {
         const auto node = find_node_by_data(nodeData);
         return (node != nullptr);
     }
 
-
 };
 
+/**
+ * Typedef to memory node.
+ */
 typedef LzNode<azgra::byte> ByteLzNode;
 

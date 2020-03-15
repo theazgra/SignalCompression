@@ -137,7 +137,7 @@ struct Span
      * @param other Span to match to.
      * @return Number of same objects in the span.
      */
-    [[nodiscard]] std::size_t match_size(const Span<T> &other) const
+    [[nodiscard]] std::size_t match_length(const Span<T> &other) const
     {
         assert(other.size <= size);
         std::size_t len = 0;
