@@ -9,8 +9,13 @@
 #include <sstream>
 #include <azgra/fs/file_system.h>
 
+constexpr azgra::byte BYTE_SIZE = sizeof(azgra::byte);
+
 constexpr bool RAW_BYTE_FLAG = false;
 constexpr bool PAIR_FLAG = true;
+
+constexpr bool IS_RAW_BYTE_FLAG(const bool flag){ return !flag; }
+constexpr bool IS_PAIR_FLAG(const bool flag) { return flag; }
 
 struct LzssHeader
 {
@@ -63,6 +68,8 @@ struct LzssResult
 [[nodiscard]] LzssResult lzss_encode(const azgra::ByteArray &data,
                                      const std::size_t searchBufferSize,
                                      const std::size_t lookAheadBufferSize);
+
+azgra::ByteArray lzss_decode(const azgra::ByteArray &encodedBytes);
 
 void test_lzss(const char *inputFile);
 

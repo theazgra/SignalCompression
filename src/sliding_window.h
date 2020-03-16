@@ -12,6 +12,7 @@ private:
     std::size_t m_end{0};
     std::size_t m_size{0};
     std::size_t m_delimiter{0};
+    std::size_t m_searchBufferSize{0};
     std::size_t m_lookAheadBufferSize{0};
 public:
     SlidingWindow() = default;
@@ -25,6 +26,7 @@ public:
         m_begin = beginIndex;
         m_end = beginIndex + windowSize;
         m_size = windowSize;
+        m_searchBufferSize = searchBufferSize;
         m_delimiter = m_begin + searchBufferSize;
         m_lookAheadBufferSize = windowSize - searchBufferSize;
     }
@@ -61,5 +63,10 @@ public:
     [[nodiscard]] long begin_index() const
     {
         return m_begin;
+    }
+
+    [[nodiscard]] std::size_t in_search_buffer() const
+    {
+        return std::min(m_delimiter, m_searchBufferSize);
     }
 };
