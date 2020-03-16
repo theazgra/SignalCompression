@@ -1,4 +1,4 @@
-#include "lzss.h"
+#include "lzss/lzss.h"
 
 int main(int, char **)
 {

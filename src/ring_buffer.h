@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Span.h"
+#include <azgra/span.h>
 #include <type_traits>
 #include <vector>
 

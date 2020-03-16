@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Span.h"
+#include <azgra/span.h>
 #include <memory>
 
 template<typename T>

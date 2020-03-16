@@ -1,6 +1,26 @@
 #include <azgra/fs/file_info.h>
 #include "lzss.h"
 
+void write_tokens_to_stream(azgra::io::stream::OutMemoryBitStream &encoderStream,
+                            const std::array<LzssToken, FLAG_GROUP_SIZE> &tokens,
+                            const azgra::byte SBits,
+                            const azgra::byte LBits,
+                            const azgra::byte flagIndex)
+{
+    for (int fId = 0; fId < flagIndex; ++fId)
+    {
+        assert(tokens[fId].is_valid());
+        if (tokens[fId].is_pair())
+        {
+            encoderStream.write_value(tokens[fId].get_match().distance, SBits);
+            encoderStream.write_value(tokens[fId].get_match().length, LBits);
+        }
+        else
+        {
+            encoderStream.write_value(tokens[fId].get_byte());
+        }
+    }
+}
 
 LzssResult lzss_encode(const azgra::ByteArray &data,
                        const std::size_t searchBufferSize,
@@ -43,10 +63,13 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
     // Match in the binary tree.
     LzMatch searchResult;
 
+    azgra::byte flagBuffer = 0;
+    azgra::byte flagIndex = 0;
+    std::array<LzssToken, FLAG_GROUP_SIZE> interBuffer;
+
     std::size_t longestMatch = 0;
     std::size_t rawCount = 0;
     std::size_t pairCount = 0;
-    std::size_t inSearchBuffer = 0;
     double matchSizes = 0.0;
     long long remaining = inputBufferSize;
     while (remaining > 0)
@@ -54,8 +77,11 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
         if (bufferIndex < (2 * lookAheadBufferSize))
         {
             // Before we get at least L elements in search buffer encode values with char code (0,'A')
-            encoderStream.write_bit(RAW_BYTE_FLAG);
-            encoderStream.write_value(window[0]);
+            flagBuffer |= static_cast<uint8_t>(RAW_BYTE_FLAG) << flagIndex;
+            interBuffer[flagIndex] = LzssToken::RawByteToken(window[0]);
+            ++flagIndex;
+//            encoderStream.write_bit(RAW_BYTE_FLAG);
+//            encoderStream.write_value(window[0]);
             windowShift = 1;
             ++rawCount;
         }
@@ -88,14 +114,15 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
 
             if (searchResult.length > 1)
             {
-                [[maybe_unused]] const size_t dataCountInSearchBuffer = window.in_search_buffer();
-                assert(searchResult.distance <= dataCountInSearchBuffer);
-                assert(searchResult.distance <= inSearchBuffer);
+//                // Write pair (distance,length)
+//                encoderStream.write_bit(PAIR_FLAG);
+//                encoderStream.write_value(searchResult.distance, SBits);
+//                encoderStream.write_value(searchResult.length, LBits);
 
-                // Write pair (distance,length)
-                encoderStream.write_bit(PAIR_FLAG);
-                encoderStream.write_value(searchResult.distance, SBits);
-                encoderStream.write_value(searchResult.length, LBits);
+                flagBuffer |= static_cast<uint8_t>(PAIR_FLAG) << flagIndex;
+                interBuffer[flagIndex] = LzssToken::PairToken(searchResult);
+                ++flagIndex;
+
                 windowShift = searchResult.length;
 
                 ++pairCount;
@@ -104,19 +131,37 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
             }
             else
             {
-                // Write RAW byte
-                encoderStream.write_bit(RAW_BYTE_FLAG);
-                encoderStream.write_value(window[0]);
+//                // Write RAW byte
+//                encoderStream.write_bit(RAW_BYTE_FLAG);
+//                encoderStream.write_value(window[0]);
+//                windowShift = 1;
+//                ++rawCount;
+
+                flagBuffer |= static_cast<uint8_t>(RAW_BYTE_FLAG) << flagIndex;
+                interBuffer[flagIndex] = LzssToken::RawByteToken(window[0]);
+                ++flagIndex;
                 windowShift = 1;
                 ++rawCount;
             }
         }
 
-        inSearchBuffer += windowShift;
-        inSearchBuffer = std::min(searchBufferSize, searchBufferSize);
+        if (flagIndex >= FLAG_GROUP_SIZE)
+        {
+            encoderStream.write_value(flagBuffer);
+            write_tokens_to_stream(encoderStream, interBuffer, SBits, LBits, flagIndex);
+            flagBuffer = 0;
+            flagIndex = 0;
+        }
+
         bufferIndex += windowShift;
         remaining -= windowShift;
         window.slide(windowShift);
+    }
+
+    if (flagIndex > 0)
+    {
+        encoderStream.write_value(flagBuffer);
+        write_tokens_to_stream(encoderStream, interBuffer, SBits, LBits, flagIndex);
     }
 
     LzssResult result = {};
@@ -130,7 +175,7 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
     result.L = lookAheadBufferSize;
     result.SBits = SBits;
     result.LBits = LBits;
-    result.bps = static_cast<double>(result.encodedBytesCount * 16) / static_cast<double> (inputBufferSize);
+    result.bps = static_cast<double>(result.encodedBytesCount * 8) / static_cast<double> (inputBufferSize);
 
     return result;
 }
@@ -144,31 +189,44 @@ azgra::ByteArray lzss_decode(const azgra::ByteArray &encodedBytes)
     std::size_t index = 0;
     azgra::ByteArray decodedBytes(header.fileSize);
 
-    bool flag;
     std::size_t distance;
     std::size_t length;
     std::size_t offset;
+    azgra::byte flagBuffer;
+    std::array<bool, FLAG_GROUP_SIZE> flags{};
     while (index < header.fileSize)
     {
-        flag = decoderStream.read_bit();
-        if (IS_RAW_BYTE_FLAG(flag))
+        flagBuffer = decoderStream.read_value<azgra::byte>();
+        for (long fId = (FLAG_GROUP_SIZE - 1); fId >= 0; --fId)
         {
-            decodedBytes[index++] = decoderStream.read_value<azgra::byte>();
+            flags[fId] = (flagBuffer & (1u << static_cast<uint8_t> (fId)));
         }
-        else
+
+        for (std::size_t fId = 0; fId < FLAG_GROUP_SIZE; ++fId)
         {
-            assert(IS_PAIR_FLAG(flag));
-            distance = decoderStream.read_value<std::size_t>(header.SBits);
-            length = decoderStream.read_value<std::size_t>(header.LBits);
-            assert(length > 0);
-
-            assert(index >= distance);
-            offset = index - distance;
-            assert(length <= index - offset);
-
-            for (std::size_t i = 0; i < length; ++i)
+            if (IS_RAW_BYTE_FLAG(flags[fId]))
             {
-                decodedBytes[index++] = decodedBytes[offset + i];
+                if (index >= header.fileSize)
+                    break;
+                decodedBytes[index++] = decoderStream.read_value<azgra::byte>();
+            }
+            else
+            {
+                if (index >= header.fileSize)
+                    break;
+                assert(IS_PAIR_FLAG(flags[fId]));
+                distance = decoderStream.read_value<std::size_t>(header.SBits);
+                length = decoderStream.read_value<std::size_t>(header.LBits);
+                assert(length > 0);
+
+                assert(index >= distance);
+                offset = index - distance;
+                assert(length <= index - offset);
+
+                for (std::size_t i = 0; i < length; ++i)
+                {
+                    decodedBytes[index++] = decodedBytes[offset + i];
+                }
             }
         }
     }
@@ -180,11 +238,10 @@ static void report_lzss_result(const char *inputFile, const LzssResult &result, 
 {
     std::stringstream ss;
     const auto fileName = azgra::fs::FileInfo(azgra::StringView(inputFile)).get_filename();
-    ss << "File\t\tPairCount\tRawCount\tSize\t\tEnc.Size\tS\tL\tBPS\tMaxMatch\n";
+    ss << "File\t\tPairCount\tRawCount\tSize\t\tEnc.Size(b)\tS\tL\tBPS\tMaxMatch\n";
     ss << fileName << '\t' << result.pairCount << "\t\t" << result.rawBytesCount << "\t\t"
-       << result.originalSize << "\t\t" << result.encodedBytesCount << "\t\t" << result.S << '\t'
+       << result.originalSize << "\t\t" << (result.encodedBytesCount * 8) << "\t\t" << result.S << '\t'
        << result.L << '\t' << result.bps << '\t' << result.maxMatchSize;
-
 
 
     azgra::print_colorized(equal ? azgra::ConsoleColor::ConsoleColor_Green : azgra::ConsoleColor::ConsoleColor_Red,
@@ -203,17 +260,16 @@ void test_lzss(const char *inputFile)
 //    -----------------------------------------------------------------------------------
 //            czech.txt         28735      150849        4096          16      689640       4.57
 
-    [[maybe_unused]] const LzssResult lzssEncodedData1 = lzss_encode(inputData, 4096, 16);
+    const LzssResult lzssEncodedData1 = lzss_encode(inputData, 4096, 16);
     const auto decodedBytes = lzss_decode(lzssEncodedData1.encodedBytes);
     const bool eq1 = std::equal(inputData.begin(), inputData.end(), decodedBytes.begin(), decodedBytes.end());
     report_lzss_result(inputFile, lzssEncodedData1, eq1);
 
-
-    [[maybe_unused]] const LzssResult lzssEncodedData2 = lzss_encode(inputData, 16384, 32);
+    const LzssResult lzssEncodedData2 = lzss_encode(inputData, 16384, 32);
     const bool eq2 = std::equal(inputData.begin(), inputData.end(), decodedBytes.begin(), decodedBytes.end());
     report_lzss_result(inputFile, lzssEncodedData2, eq2);
 
-    [[maybe_unused]] const LzssResult lzssEncodedData3 = lzss_encode(inputData, 32768, 64);
+    const LzssResult lzssEncodedData3 = lzss_encode(inputData, 32768, 64);
     const bool eq3 = std::equal(inputData.begin(), inputData.end(), decodedBytes.begin(), decodedBytes.end());
     report_lzss_result(inputFile, lzssEncodedData3, eq3);
 
