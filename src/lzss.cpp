@@ -1,31 +1,28 @@
+#include <azgra/fs/file_info.h>
 #include "lzss.h"
 
 
-azgra::ByteArray lzss_encode(const azgra::ByteArray &data,
-                             const azgra::byte windowBits,
-                             const azgra::byte searchBufferBits)
+LzssResult lzss_encode(const azgra::ByteArray &data,
+                       const std::size_t searchBufferSize,
+                       const std::size_t lookAheadBufferSize)
 {
     // NOTE(Moravec):   We are going to cheat and hold the whole data buffer in memory
     //                  instead of reading from the stream.
 
+    // TODO(Moravec):   We are not grouping bit flags in this first implementation.
+
     using namespace azgra::io::stream;
-    // Size of the group. 8 Flags for 8 values or pairs.
-    const std::size_t GROUP_SIZE = 8;
 
-    always_assert(searchBufferBits < windowBits && "No bits left for look ahead buffer");
+    const std::size_t inputBufferSize = data.size();
 
-    const std::size_t lookAheadBufferBits = (windowBits - searchBufferBits);
+    const auto SBits = static_cast<azgra::byte>(ceil(log2(searchBufferSize)));
+    const auto LBits = static_cast<azgra::byte>(ceil(log2(lookAheadBufferSize)));
+    const auto slidingWindowSize = searchBufferSize + lookAheadBufferSize;
 
-    const auto searchBufferSize = static_cast<std::size_t > (pow(2, searchBufferBits));
-    const auto lookAheadBufferSize = static_cast<std::size_t > (pow(2, lookAheadBufferBits));
-    const std::size_t slidingWindowSize = searchBufferSize + lookAheadBufferSize;
-
-    fprintf(stdout, "S=%lu\nL=%lu\nW=%lu\n", searchBufferSize, lookAheadBufferSize, slidingWindowSize);
-
-    std::size_t inputBufferSize = data.size();
+    //fprintf(stdout, "S=%lu(%ub)\tL=%lu(%ub)\tW=%lu\n", searchBufferSize, SBits, lookAheadBufferSize, LBits, slidingWindowSize);
 
     // Binary search tree.
-    ByteLzTree searchTree;
+    ByteLzTree bst;
 
     // Last shift of the window.
     std::size_t windowShift = 0;
@@ -36,32 +33,27 @@ azgra::ByteArray lzss_encode(const azgra::ByteArray &data,
 
     // Encoder stream.
     OutMemoryBitStream encoderStream;
-    // InterBuffer stream.
-    OutMemoryBitStream interBuffer;
 
-    // Flag buffer with its index.
-    azgra::byte flagBuffer = 0;
-    azgra::byte flagBufferIndex = 0;
+    LzssHeader header(inputBufferSize, SBits, LBits);
+    header.write_to_encoder_stream(encoderStream);
 
     // String being searched.
     ByteSpan searchSpan;
     // Match in the binary tree.
     LzMatch searchResult;
 
-    std::size_t bestMatch = 0;
+    std::size_t longestMatch = 0;
     std::size_t rawCount = 0;
-    std::size_t pairMatchCount = 0;
+    std::size_t pairCount = 0;
     double matchSizes = 0.0;
     long long remaining = inputBufferSize;
-
     while (remaining > 0)
     {
         if (bufferIndex < (2 * lookAheadBufferSize))
         {
             // Before we get at least L elements in search buffer encode values with char code (0,'A')
-            azgra::byte byteToEncode = window[0];
-            flagBuffer |= RAW_BYTE_FLAG << flagBufferIndex++;
-            interBuffer.write_aligned_byte(byteToEncode);
+            encoderStream.write_bit(RAW_BYTE_FLAG);
+            encoderStream.write_value(window[0]);
             windowShift = 1;
             ++rawCount;
         }
@@ -73,11 +65,9 @@ azgra::ByteArray lzss_encode(const azgra::ByteArray &data,
                 for (std::size_t nodeIndex = 0; nodeIndex < windowShift; ++nodeIndex)
                 {
                     // Create Span for node. Offset from the delimiter backwards.
-                    searchTree.add_node(window.span_from_delimiter(-static_cast<long>(lookAheadBufferSize + nodeIndex)));
+                    bst.add_node(window.span_from_delimiter(-static_cast<long>(lookAheadBufferSize + nodeIndex)));
                 }
 
-//                if (windowBeginIndex > 0)
-//                {
                 const long int deleteCount = std::min(static_cast<long>(windowShift), windowBeginIndex);
                 for (int nodeIndex = 0; nodeIndex < deleteCount; ++nodeIndex)
                 {
@@ -85,35 +75,33 @@ azgra::ByteArray lzss_encode(const azgra::ByteArray &data,
                     const long offset = static_cast<long>(deleteCount + 1) - (static_cast<long> (nodeIndex + 1));
                     const auto dataToDelete = window.span_from_begin(-offset);
 
-                    const auto deletionResult = searchTree.delete_node(dataToDelete);
+                    [[maybe_unused]] const auto deletionResult = bst.delete_node(dataToDelete);
                     assert(deletionResult == NodeDeletionResult::NodeDeleted ||
                            deletionResult == NodeDeletionResult::NodeSurvived);
                 }
-//                }
             }
 
             searchSpan = window.span_from_delimiter(0, std::min(lookAheadBufferSize, static_cast<std::size_t>(remaining)));
-            searchResult = searchTree.find_best_match(searchSpan);
+            searchResult = bst.find_best_match(searchSpan);
 
             if (searchResult.length > 1)
             {
                 matchSizes += searchResult.length;
-                ++pairMatchCount;
-                bestMatch = std::max(bestMatch, searchResult.length);
+                ++pairCount;
+                longestMatch = std::max(longestMatch, searchResult.length);
 
                 // Write pair (distance,length)
-                flagBuffer |= PAIR_FLAG << flagBufferIndex++;
-                interBuffer.write_value(searchResult.distance, searchBufferBits);
-                interBuffer.write_value(searchResult.length, lookAheadBufferBits);
+                encoderStream.write_bit(PAIR_FLAG);
+                encoderStream.write_value(searchResult.distance, SBits);
+                encoderStream.write_value(searchResult.length, LBits);
                 windowShift = searchResult.length;
-
                 //fprintf(stdout, "Match: Distance: %lu\tLength: %lu\n", searchMatch.distance, searchMatch.length);
             }
             else
             {
                 // Write RAW byte
-                flagBuffer |= RAW_BYTE_FLAG << flagBufferIndex++;
-                interBuffer.write_aligned_byte(searchSpan.ptr[0]);
+                encoderStream.write_bit(RAW_BYTE_FLAG);
+                encoderStream.write_value(window[0]);
                 windowShift = 1;
                 ++rawCount;
             }
@@ -122,38 +110,33 @@ azgra::ByteArray lzss_encode(const azgra::ByteArray &data,
         bufferIndex += windowShift;
         remaining -= windowShift;
         window.slide(windowShift);
-
-        assert(flagBufferIndex <= GROUP_SIZE);
-        if (flagBufferIndex == GROUP_SIZE)
-        {
-            // Flush flag buffer and inter buffer to encoder stream.
-            encoderStream.write_aligned_byte(flagBuffer);
-            interBuffer.copy_aligned_buffer_and_reset(encoderStream);
-
-            flagBufferIndex = 0;
-            flagBuffer = 0;
-        }
-        //fprintf(stdout, "%lli/%lu\n", remaining, inputBufferSize);
     }
 
-    if (flagBufferIndex > 0)
-    {
-        // Flush flag buffer and inter buffer to encoder stream.
-        encoderStream.write_aligned_byte(flagBuffer);
-        interBuffer.copy_aligned_buffer_and_reset(encoderStream);
-    }
+    LzssResult result = {};
+    result.originalSize = inputBufferSize;
+    result.encodedBytes = encoderStream.get_flushed_buffer();
+    result.encodedBytesCount = result.encodedBytes.size();
+    result.maxMatchSize = longestMatch;
+    result.pairCount = pairCount;
+    result.rawBytesCount = rawCount;
+    result.S = searchBufferSize;
+    result.L = lookAheadBufferSize;
+    result.SBits = SBits;
+    result.LBits = LBits;
+    result.bps = static_cast<double>(result.encodedBytesCount * 16) / static_cast<double> (inputBufferSize);
 
-    //maxSizeMatch
-    const auto encodedSize = encoderStream.get_flushed_buffer().size();
-    const double bps = static_cast<double>(encodedSize * 16) / static_cast<double> (inputBufferSize);
-    fprintf(stdout, "ESize: %lu\nBPS: %.4f\nRawCount: %lu\nPairCount: %lu\n MaxMatch: %lu\n", encodedSize, bps, rawCount, pairMatchCount,
-            bestMatch);
+    return result;
+}
 
-    const double averageMatchSize = matchSizes / static_cast<double>(pairMatchCount);
-    fprintf(stdout, "Average match size: %.4f\n", averageMatchSize);
-
-    return azgra::ByteArray(10);
-    //return encoderStream.get_flushed_buffer();
+static void report_lzss_result(const char *inputFile, const LzssResult &result)
+{
+    std::stringstream ss;
+    const auto fileName = azgra::fs::FileInfo(azgra::StringView(inputFile)).get_filename();
+    ss << "File\t\tPairCount\tRawCount\tSize\t\tEnc.Size\tS\tL\tBPS\n";
+    ss << fileName << '\t' << result.pairCount << "\t\t" << result.rawBytesCount << "\t\t"
+       << result.originalSize << "\t\t" << result.encodedBytesCount << "\t\t" << result.S << '\t'
+       << result.L << '\t' << result.bps << '\n';
+    puts(ss.str().c_str());
 }
 
 
@@ -163,7 +146,16 @@ void test_lzss(const char *inputFile)
 
     azgra::ByteArray inputData = InBinaryFileStream(inputFile).consume_whole_file();
 
-//    [[maybe_unused]] const azgra::ByteArray lzssEncodedData = lzss_encode(inputData, 32, 25);
-//    [[maybe_unused]] const azgra::ByteArray lzssEncodedData2 = lzss_encode(inputData, 16, 10);
-    [[maybe_unused]] const azgra::ByteArray lzssEncodedData3 = lzss_encode(inputData, 16, 11);
+    //    File           Triplets    FileSize  WindowSize   Max.match    Enc.Size         bps
+//    -----------------------------------------------------------------------------------
+//            czech.txt         28735      150849        4096          16      689640       4.57
+
+    [[maybe_unused]] const LzssResult lzssEncodedData1 = lzss_encode(inputData, 4096, 16);
+    report_lzss_result(inputFile, lzssEncodedData1);
+
+    [[maybe_unused]] const LzssResult lzssEncodedData2 = lzss_encode(inputData, 16384, 32);
+    report_lzss_result(inputFile, lzssEncodedData2);
+
+    [[maybe_unused]] const LzssResult lzssEncodedData3 = lzss_encode(inputData, 32768, 64);
+    report_lzss_result(inputFile, lzssEncodedData3);
 }
