@@ -70,7 +70,6 @@ public:
                 // NOTE(Moravec): Node still have one or more lives. Node won't be deleted
                 return NodeDeletionResult::NodeSurvived;
             }
-            assert(m_root->m_lesser || m_root->m_greater);
 
             if (m_root->m_lesser && !m_root->m_greater)
             {
@@ -80,12 +79,6 @@ public:
                 m_root->m_parent = nullptr;
 
                 deletionResult = NodeDeletionResult::NodeDeleted;
-
-                if (m_root->m_lesser)
-                    assert(m_root->m_lesser->m_data.lexicographic_compare(m_root->m_data) < 0);
-                if (m_root->m_greater)
-                    assert(m_root->m_data.lexicographic_compare(m_root->m_greater->m_data) < 0);
-
             }
             else if (m_root->m_greater && !m_root->m_lesser)
             {
@@ -95,11 +88,6 @@ public:
                 m_root->m_parent = nullptr;
 
                 deletionResult = NodeDeletionResult::NodeDeleted;
-
-                if (m_root->m_lesser)
-                    assert(m_root->m_lesser->m_data.lexicographic_compare(m_root->m_data) < 0);
-                if (m_root->m_greater)
-                    assert(m_root->m_data.lexicographic_compare(m_root->m_greater->m_data) < 0);
             }
             else
             {
@@ -107,17 +95,8 @@ public:
                 const auto successorSpan = successor->m_data;
                 const auto successorLives = successor->m_lives;
 
-                assert(m_root->m_data.lexicographic_compare(successorSpan) < 0);
-
                 const NodeDeletionResult deletedSuccessorNode = m_root->delete_node(successorSpan, true);
-                assert(deletedSuccessorNode == NodeDeletionResult::NodeDeleted);
-
                 deletionResult = deletedSuccessorNode;
-
-                if (m_root->m_lesser)
-                    assert(m_root->m_lesser->m_data.lexicographic_compare(dataToDelete) < 0);
-                if (m_root->m_greater)
-                    assert(dataToDelete.lexicographic_compare(m_root->m_greater->m_data) < 0);
 
                 m_root->m_data = successorSpan;
                 m_root->m_lives = successorLives;

@@ -9,7 +9,6 @@ void write_tokens_to_stream(azgra::io::stream::OutMemoryBitStream &encoderStream
 {
     for (int fId = 0; fId < flagIndex; ++fId)
     {
-        assert(tokens[fId].is_valid());
         if (tokens[fId].is_pair())
         {
             encoderStream.write_value(tokens[fId].get_match().distance, SBits);
@@ -80,8 +79,6 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
             flagBuffer |= static_cast<uint8_t>(RAW_BYTE_FLAG) << flagIndex;
             interBuffer[flagIndex] = LzssToken::RawByteToken(window[0]);
             ++flagIndex;
-//            encoderStream.write_bit(RAW_BYTE_FLAG);
-//            encoderStream.write_value(window[0]);
             windowShift = 1;
             ++rawCount;
         }
@@ -114,11 +111,6 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
 
             if (searchResult.length > 1)
             {
-//                // Write pair (distance,length)
-//                encoderStream.write_bit(PAIR_FLAG);
-//                encoderStream.write_value(searchResult.distance, SBits);
-//                encoderStream.write_value(searchResult.length, LBits);
-
                 flagBuffer |= static_cast<uint8_t>(PAIR_FLAG) << flagIndex;
                 interBuffer[flagIndex] = LzssToken::PairToken(searchResult);
                 ++flagIndex;
@@ -131,12 +123,7 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
             }
             else
             {
-//                // Write RAW byte
-//                encoderStream.write_bit(RAW_BYTE_FLAG);
-//                encoderStream.write_value(window[0]);
-//                windowShift = 1;
-//                ++rawCount;
-
+                // Write RAW byte
                 flagBuffer |= static_cast<uint8_t>(RAW_BYTE_FLAG) << flagIndex;
                 interBuffer[flagIndex] = LzssToken::RawByteToken(window[0]);
                 ++flagIndex;
@@ -145,6 +132,7 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
             }
         }
 
+        // Flush flag buffer and tokens
         if (flagIndex >= FLAG_GROUP_SIZE)
         {
             encoderStream.write_value(flagBuffer);
@@ -155,9 +143,11 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
 
         bufferIndex += windowShift;
         remaining -= windowShift;
+        // Slide the window by the matched string length.
         window.slide(windowShift);
     }
 
+    // Flush flag buffer and tokens
     if (flagIndex > 0)
     {
         encoderStream.write_value(flagBuffer);
@@ -214,14 +204,9 @@ azgra::ByteArray lzss_decode(const azgra::ByteArray &encodedBytes)
             {
                 if (index >= header.fileSize)
                     break;
-                assert(IS_PAIR_FLAG(flags[fId]));
                 distance = decoderStream.read_value<std::size_t>(header.SBits);
                 length = decoderStream.read_value<std::size_t>(header.LBits);
-                assert(length > 0);
-
-                assert(index >= distance);
                 offset = index - distance;
-                assert(length <= index - offset);
 
                 for (std::size_t i = 0; i < length; ++i)
                 {

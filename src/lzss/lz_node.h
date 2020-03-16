@@ -77,7 +77,6 @@ private:
         else
         {
             // NOTE(Moravec): This should not happen.
-            assert(false);
             return nullptr;
         }
     }
@@ -91,13 +90,11 @@ private:
     {
         if (m_lesser && (m_lesser.get() == node))
         {
-            assert(m_lesser->m_data == node->m_data);
             m_lesser.release();
             return NodeDeletionResult::NodeDeleted;
         }
         if (m_greater && (m_greater.get() == node))
         {
-            assert(m_greater->m_data == node->m_data);
             m_greater.release();
             return NodeDeletionResult::NodeDeleted;
         }
@@ -114,18 +111,12 @@ private:
     {
         if (m_lesser && (m_lesser.get() == oldChild))
         {
-            assert(m_lesser->m_data == oldChild->m_data);
-            assert(newChild->m_data.lexicographic_compare(m_data) < 0);
-
             m_lesser = std::move(newChild);
             m_lesser->m_parent = this;
             return true;
         }
         if (m_greater && (m_greater.get() == oldChild))
         {
-            assert(m_greater->m_data == oldChild->m_data);
-            assert(m_data.lexicographic_compare(newChild->m_data) < 0);
-
             m_greater = std::move(newChild);
             m_greater->m_parent = this;
             return true;
@@ -139,7 +130,6 @@ private:
      */
     LzNode<T> *find_inorder_successor() const
     {
-        assert(m_greater);
         auto *successor = m_greater.get();
         while (successor->m_lesser)
         {
@@ -148,7 +138,6 @@ private:
         return successor;
     }
 
-    // TODO(Moravec): FIXME
     /**
      * Find best match for the target data. Will sue data.size for comparision.
      * @param targetData Target data.
@@ -206,64 +195,36 @@ private:
         {
             auto parent = nodeToDelete->m_parent;
             const NodeDeletionResult result = parent->delete_child(nodeToDelete);
-            assert(result == NodeDeletionResult::NodeDeleted);
-
-            if (m_lesser)
-                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
-            if (m_greater)
-                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
 
             return result;
         }
         else if (nodeToDelete->m_lesser && !nodeToDelete->m_greater) // Node has only lesser child
         {
             auto parent = nodeToDelete->m_parent;
-            assert(parent != nullptr);
             auto newChild = std::move(nodeToDelete->m_lesser);
             const bool result = parent->swap_child(nodeToDelete, newChild);
-            assert(result);
-
-            if (m_lesser)
-                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
-            if (m_greater)
-                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
 
             return result ? NodeDeletionResult::NodeDeleted : NodeDeletionResult::NodeNotFound;
         }
         else if (nodeToDelete->m_greater && !nodeToDelete->m_lesser) // Node has only greater child
         {
             auto parent = nodeToDelete->m_parent;
-            assert(parent != nullptr);
             auto newChild = std::move(nodeToDelete->m_greater);
             const bool result = parent->swap_child(nodeToDelete, newChild);
-
-            if (m_lesser)
-                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
-            if (m_greater)
-                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
-
-            assert(result);
             return result ? NodeDeletionResult::NodeDeleted : NodeDeletionResult::NodeNotFound;
         }
         else // Node has both children.
         {
             // Find inorder successor.
             LzNode<T> *successor = nodeToDelete->find_inorder_successor();
-            assert(successor != nullptr);
 
             const auto successorSpan = successor->m_data;
             const int successorLives = successor->m_lives;
 
             const NodeDeletionResult successorDeletion = delete_node(successorSpan, true);
-            assert(successorDeletion == NodeDeletionResult::NodeDeleted);
 
             nodeToDelete->m_data = successorSpan;
             nodeToDelete->m_lives = successorLives;
-
-            if (m_lesser)
-                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
-            if (m_greater)
-                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
 
             return successorDeletion;
         }
@@ -289,7 +250,6 @@ private:
             {
                 m_lesser = std::make_unique<LzNode<T>>(std::move(nodeData));
                 m_lesser->m_parent = this;
-                assert(m_lesser->m_data.lexicographic_compare(m_data) < 0);
             }
             else
             {
@@ -298,12 +258,10 @@ private:
         }
         else
         {
-            assert(compare > 0);
             if (!m_greater)
             {
                 m_greater = std::make_unique<LzNode<T>>(std::move(nodeData));
                 m_greater->m_parent = this;
-                assert(m_data.lexicographic_compare(m_greater->m_data) < 0);
             }
             else
             {
