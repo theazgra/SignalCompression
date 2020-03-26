@@ -1,59 +1,6 @@
 #include <queue>
 #include "huffman.h"
 
-SymbolInfo &SymbolInfo::operator++()
-{
-    ++occurrenceCount;
-    return *this;
-}
-
-static void find_all_symbols(std::map<char, SymbolInfo> &symbolMap, const azgra::StringView &string)
-{
-    for (char c : string)
-    {
-        if (auto it = symbolMap.find(c); it != symbolMap.cend())
-        {
-            ++symbolMap[c];
-            // Assert that we didn't overflow.
-            assert(symbolMap[c].occurrenceCount != 0);
-        }
-        else
-        {
-            symbolMap[c] = SymbolInfo(1);
-        }
-    }
-}
-
-inline void calculate_symbol_probability(std::map<char, SymbolInfo> &symbolMap, const size_t totalSymbolCount)
-{
-    for (auto &[symbol, info] : symbolMap)
-    {
-        info.probability = static_cast<float>(info.occurrenceCount) / static_cast<float>(totalSymbolCount);
-    }
-}
-
-static float calculate_entropy(const std::map<char, SymbolInfo> &symbolMap)
-{
-    float entropy = 0.0f;
-    for (auto &[symbol, info] : symbolMap)
-    {
-        entropy += (info.probability * log2(info.probability));
-    }
-    return -entropy;
-}
-
-std::map<char, SymbolInfo> get_string_symbols_info(const azgra::StringView &string)
-{
-    std::map<char, SymbolInfo> symbolMap;
-
-    find_all_symbols(symbolMap, string);
-    calculate_symbol_probability(symbolMap, string.size());
-
-    float entropy = calculate_entropy(symbolMap);
-    fprintf(stdout, "Entropy: %.4f\n", entropy);
-
-    return symbolMap;
-}
 
 inline void write_code(azgra::io::stream::OutMemoryBitStream &stream, const std::vector<bool> &code)
 {

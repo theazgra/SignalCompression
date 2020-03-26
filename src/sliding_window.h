@@ -43,20 +43,20 @@ public:
         return m_data[m_delimiter + offsetFromLookAheadBuffer];
     }
 
-    [[nodiscard]] inline Span<T> span_from_delimiter(const long offset, const std::size_t spanSize)
+    [[nodiscard]] inline azgra::Span<T> span_from_delimiter(const long offset, const std::size_t spanSize)
     {
-        Span<T> searchSpan((m_data + (m_delimiter + offset)), spanSize);
+        azgra::Span<T> searchSpan((m_data + (m_delimiter + offset)), spanSize);
         return searchSpan;
     }
 
-    [[nodiscard]] inline Span<T> span_from_delimiter(const long offset)
+    [[nodiscard]] inline azgra::Span<T> span_from_delimiter(const long offset)
     {
         return span_from_delimiter(offset, m_lookAheadBufferSize);
     }
 
-    [[nodiscard]] inline Span<T> span_from_begin(const long offset)
+    [[nodiscard]] inline azgra::Span<T> span_from_begin(const long offset)
     {
-        Span<T> searchSpan((m_data + (m_begin + offset)), m_lookAheadBufferSize);
+        azgra::Span<T> searchSpan((m_data + (m_begin + offset)), m_lookAheadBufferSize);
         return searchSpan;
     }
 

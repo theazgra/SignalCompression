@@ -41,7 +41,7 @@ public:
      * @param targetData Data to find match for.
      * @return Best match for the data.
      */
-    [[nodiscard]] LzMatch find_best_match(const Span<T> &targetData) const
+    [[nodiscard]] LzMatch find_best_match(const azgra::Span<T> &targetData) const
     {
         if (!m_root)
         { return LzMatch(); }
@@ -56,7 +56,7 @@ public:
      * @param dataToDelete Node to be deleted data.
      * @return Deletion result
      */
-    NodeDeletionResult delete_node(const Span<T> &dataToDelete)
+    NodeDeletionResult delete_node(const azgra::Span<T> &dataToDelete)
     {
         if (!m_root)
         { return NodeDeletionResult::NodeNotFound; }
@@ -118,7 +118,7 @@ public:
      * Add new node to the tree.
      * @param nodeData New node data.
      */
-    void add_node(Span<T> &&nodeData)
+    void add_node(azgra::Span<T> &&nodeData)
     {
         if (!m_root)
         {
@@ -137,7 +137,7 @@ public:
      * @param targetData Target node data.
      * @return True if node exists.
      */
-    [[nodiscard]] bool contains_node(const Span<T> &targetData)
+    [[nodiscard]] bool contains_node(const azgra::Span<T> &targetData)
     {
         return m_root->has_node_with_data(targetData);
     }

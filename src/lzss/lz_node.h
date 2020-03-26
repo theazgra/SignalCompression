@@ -31,7 +31,7 @@ private:
     /**
      * Non-owning node data.
      */
-    Span<T> m_data{};
+    azgra::Span<T> m_data{};
 
     /**
      * Pointer to the node parent.
@@ -59,7 +59,7 @@ private:
      * @param targetNodeData Target node data.
      * @return Pointer to found node.
      */
-    LzNode<T> *find_node_by_data(const Span<T> &targetNodeData)
+    LzNode<T> *find_node_by_data(const azgra::Span<T> &targetNodeData)
     {
         int compare = targetNodeData.lexicographic_compare(m_data);
         if (compare == 0)
@@ -143,7 +143,7 @@ private:
      * @param targetData Target data.
      * @return Best match.
      */
-    void find_best_match(const Span<T> &targetData, LzMatch &bestMatch) const
+    void find_best_match(const azgra::Span<T> &targetData, LzMatch &bestMatch) const
     {
         if (m_data[0] == targetData[0])
         {
@@ -172,7 +172,7 @@ private:
      * @param forceDeletion True if to force the deletion, ignore node lives.
      * @return Node deletion result.
      */
-    NodeDeletionResult delete_node(const Span<T> &dataToDelete, const bool forceDeletion = false)
+    NodeDeletionResult delete_node(const azgra::Span<T> &dataToDelete, const bool forceDeletion = false)
     {
         // Find node to delete.
         auto nodeToDelete = find_node_by_data(dataToDelete);
@@ -234,7 +234,7 @@ private:
      * Add child to the current node or its subtree.
      * @param nodeData New node data.
      */
-    void add_child(Span<T> &&nodeData)
+    void add_child(azgra::Span<T> &&nodeData)
     {
         // Compare new node data to this node data.
         const int compare = nodeData.lexicographic_compare(m_data);
@@ -280,7 +280,7 @@ public:
      * Create node with its data.
      * @param data Node data.
      */
-    explicit LzNode(Span<T> &&data)
+    explicit LzNode(azgra::Span<T> &&data)
     {
         m_data = std::move(data);
     }
@@ -290,7 +290,7 @@ public:
      * @param nodeData Target node data.
      * @return True if node with data exists.
      */
-    [[nodiscard]] bool has_node_with_data(const Span<T> &nodeData)
+    [[nodiscard]] bool has_node_with_data(const azgra::Span<T> &nodeData)
     {
         const auto node = find_node_by_data(nodeData);
         return (node != nullptr);

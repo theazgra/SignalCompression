@@ -58,7 +58,7 @@ LzssResult lzss_encode(const azgra::ByteArray &data,
     header.write_to_encoder_stream(encoderStream);
 
     // String being searched.
-    ByteSpan searchSpan;
+    azgra::ByteSpan searchSpan;
     // Match in the binary tree.
     LzMatch searchResult;
 
