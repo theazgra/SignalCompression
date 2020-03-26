@@ -108,6 +108,7 @@ namespace huffman
             if (currentNode->bit != -1)
                 code.emplace_back(currentNode->bit == 1);
 
+            // NOTE (Moravec): Parent is `actually` child :D
             if (currentNode->parentA)
             {
                 create_symbol_code(currentNode->parentA, code, symbols);
@@ -136,7 +137,6 @@ namespace huffman
 
         // NOTE(Moravec):   We are not able to use std::unique_ptr with std::priority_queue
         //                  because top returns const&, which can't be moved.
-
         std::priority_queue<std::shared_ptr<HuffmanNode<SymbolType>>,
                 std::vector<std::shared_ptr<HuffmanNode<SymbolType>>>,
                 HuffmanNodeComparerGreater<SymbolType>>

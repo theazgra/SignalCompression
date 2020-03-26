@@ -3,3 +3,7 @@ cmake-build-debug/
 .idea/
 .vs/
 build/
+data/test.bmp
+data/test.png
+data/test.txt
+data/test.txt

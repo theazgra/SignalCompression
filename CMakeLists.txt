@@ -7,8 +7,11 @@ project(asc CXX)
 
 add_subdirectory(AzgraCppLibrary)
 
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -fsanitize=address")
 
-add_executable(asc src/main.cpp src/huffman.cpp)
+
+add_executable(asc src/main.cpp src/huffman.cpp src/lzss/lzss_token.cpp src/lzss/lzss.cpp )
+target_compile_options(asc PRIVATE -Wall -Wpedantic)
 
 target_link_libraries(asc PRIVATE azgra)
 set_property(TARGET asc  PROPERTY CXX_STANDARD 17)
