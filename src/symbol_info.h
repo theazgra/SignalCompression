@@ -7,7 +7,7 @@ struct SymbolInfo
     /**
      * Symbol occurrence count.
      */
-    uint16_t occurrenceCount{};
+    uint32_t occurrenceCount{};
 
     /**
      * Probability of the symbol.
@@ -17,10 +17,10 @@ struct SymbolInfo
     SymbolInfo() = default;
 
 
-    explicit SymbolInfo(const uint16_t occurrence_) : occurrenceCount(occurrence_), probability(0.0f)
+    explicit SymbolInfo(const uint32_t occurrence_) : occurrenceCount(occurrence_), probability(0.0f)
     {}
 
-    explicit SymbolInfo(const uint16_t occurrence_, const double prob)
+    explicit SymbolInfo(const uint32_t occurrence_, const double prob)
             : occurrenceCount(occurrence_), probability(prob)
     {}
 

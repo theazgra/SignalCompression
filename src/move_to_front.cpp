@@ -30,7 +30,7 @@ inline void move_index_to_front(std::vector<azgra::byte> &alphabet, const std::s
     puts(ss.str().c_str());
 }
 
-std::vector<std::size_t> apply_move_to_front_coding(const azgra::ByteArray &data)
+MTFResult encode_with_move_to_front(const azgra::ByteArray &data)
 {
     const std::size_t dataSize = data.size();
     auto alphabet = get_alphabet_from_text(data);
@@ -52,5 +52,24 @@ std::vector<std::size_t> apply_move_to_front_coding(const azgra::ByteArray &data
             }
         }
     }
-    return indices;
+    return MTFResult(std::move(alphabet), std::move(indices));
+}
+
+azgra::ByteArray decode_move_to_front(const MTFResult &mtf)
+{
+    auto alphabet = mtf.alphabet;
+    std::sort(alphabet.begin(), alphabet.end());
+
+    const std::size_t resultSize = mtf.indices.size();
+    azgra::ByteArray result(resultSize);
+
+    std::size_t alphabetIndex;
+    for (std::size_t i = 0; i < resultSize; ++i)
+    {
+        alphabetIndex = mtf.indices[i];
+        result[i] = alphabet[alphabetIndex];
+        move_index_to_front(alphabet, alphabetIndex);
+    }
+
+    return result;
 }

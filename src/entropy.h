@@ -5,19 +5,7 @@
 #include <azgra/span.h>
 #include "symbol_info.h"
 
-
-template <typename T>
-double calculate_entropy(const std::map<T, SymbolInfo> &symbolMap)
-{
-    double entropy = 0.0f;
-    for (const auto &[symbol, info] : symbolMap)
-    {
-        entropy += (info.probability * log2(info.probability));
-    }
-    return -entropy;
-}
-
-template <typename T>
+template<typename T>
 static void find_all_symbols_in_text(std::map<T, SymbolInfo> &symbolMap, const std::vector<T> &data)
 {
     for (std::size_t i = 0; i < data.size(); ++i)
@@ -35,7 +23,7 @@ static void find_all_symbols_in_text(std::map<T, SymbolInfo> &symbolMap, const s
     }
 }
 
-template <typename T>
+template<typename T>
 std::map<T, SymbolInfo> get_symbols_info(const std::vector<T> &data)
 {
     std::map<T, SymbolInfo> symbolMap;
@@ -49,4 +37,23 @@ std::map<T, SymbolInfo> get_symbols_info(const std::vector<T> &data)
     }
 
     return symbolMap;
+}
+
+template<typename T>
+double calculate_entropy(const std::map<T, SymbolInfo> &symbolMap)
+{
+    double entropy = 0.0f;
+    for (const auto &[symbol, info] : symbolMap)
+    {
+        entropy += (info.probability * log2(info.probability));
+    }
+    return -entropy;
+}
+
+template<typename T>
+double calculate_entropy(const std::vector<T> &data)
+{
+    const auto symbolMap = get_symbols_info(data);
+    const auto entropy = calculate_entropy(symbolMap);
+    return entropy;
 }
