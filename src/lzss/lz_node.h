@@ -150,7 +150,7 @@ private:
             const std::size_t matchLength = m_data.match_length(targetData);
             if (matchLength > bestMatch.length)
             {
-                bestMatch.distance = targetData.ptr - m_data.ptr;
+                bestMatch.distance = targetData.data() - m_data.data();
                 bestMatch.length = matchLength;
             }
         }

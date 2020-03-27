@@ -1,8 +1,8 @@
 #include "move_to_front.h"
 
-std::vector<azgra::byte> get_alphabet_from_text(const azgra::StringView &text)
+azgra::ByteArray get_alphabet_from_text(const azgra::ByteArray &data)
 {
-    const auto uniqueChars = azgra::collection::distinct(text.cbegin(), text.cend());
+    const auto uniqueChars = azgra::collection::distinct(data.cbegin(), data.cend());
     std::vector<azgra::byte> alphabet(uniqueChars.begin(), uniqueChars.end());
     std::sort(alphabet.begin(), alphabet.end());
     return alphabet;
@@ -30,19 +30,19 @@ inline void move_index_to_front(std::vector<azgra::byte> &alphabet, const std::s
     puts(ss.str().c_str());
 }
 
-std::vector<std::size_t> apply_move_to_front_coding(const azgra::StringView &text)
+std::vector<std::size_t> apply_move_to_front_coding(const azgra::ByteArray &data)
 {
-    const std::size_t textLen = text.length();
-    auto alphabet = get_alphabet_from_text(text);
+    const std::size_t dataSize = data.size();
+    auto alphabet = get_alphabet_from_text(data);
     const std::size_t alphabetSize = alphabet.size();
 
-    std::vector<std::size_t> indices(textLen);
+    std::vector<std::size_t> indices(dataSize);
 
-    for (std::size_t tIndex = 0; tIndex < textLen; ++tIndex)
+    for (std::size_t tIndex = 0; tIndex < dataSize; ++tIndex)
     {
         for (std::size_t alphabetIndex = 0; alphabetIndex < alphabetSize; ++alphabetIndex)
         {
-            if (text[tIndex] == alphabet[alphabetIndex])
+            if (data[tIndex] == alphabet[alphabetIndex])
             {
                 indices[tIndex] = alphabetIndex;
 
