@@ -59,8 +59,9 @@ BWTResult apply_burrows_wheeler_transform(const azgra::ByteSpan &S)
         }
     }
 
-    const double L_Entropy = calculate_entropy(L);
-    fprintf(stdout, "BWT's L entropy = %.4f\n", L_Entropy);
+//    const double L_Entropy = calculate_entropy(L);
+//    fprintf(stdout, "Burrows-Wheeler transform's L entropy = %.4f\n", L_Entropy);
+
     return BWTResult(encode_with_move_to_front(L), I);
 }
 
@@ -74,7 +75,6 @@ azgra::ByteArray decode_burrows_wheeler_transform(const azgra::ByteArray &L, con
         std::vector<bool> indexUsed(dataSize);
         azgra::ByteArray F(L.begin(), L.end());
         std::sort(F.begin(), F.end());
-        puts("Constructing T");
         // Construct array T.
 
 //#pragma omp parallel for
@@ -90,14 +90,8 @@ azgra::ByteArray decode_burrows_wheeler_transform(const azgra::ByteArray &L, con
                     break;
                 }
             }
-            if ((i % 1000) == 0)
-            {
-                const double percFinished = (static_cast<double>(i) / static_cast<double>(dataSize)) * 100.0;
-                fprintf(stdout, "T construction = %.4f %%\n", percFinished);
-            }
         }
         // F is no longer needed here.
-        puts("Created T");
 
     }
     azgra::ByteArray reconstructedS(dataSize);
@@ -109,7 +103,7 @@ azgra::ByteArray decode_burrows_wheeler_transform(const azgra::ByteArray &L, con
                     return j;
                 }
                 std::size_t current = j;
-                for (int k = 0; k < i; ++k)
+                for (std::size_t k = 0; k < i; ++k)
                 {
                     current = T[current];
                 }
@@ -147,15 +141,26 @@ azgra::ByteArray encode_with_bwt_mtf_rle(const azgra::ByteSpan &dataSpan)
         bitStream.write_value(alphabetByte);
     }
 
-    // Write indices count
-    bitStream.write_value(bwtResult.mtf.indices.size());
-
     // Write bits for alphabet indices.
     bitStream.write_value(static_cast<azgra::byte>(alphabetIndexBits));
-    // Write indices
-    for (const azgra::byte alphabetIndex : bwtResult.mtf.indices)
+
+    // Write indices count
+    bitStream.write_value(bwtResult.mtf.indicesCount);
+
+    // Write pair count
+    bitStream.write_value(bwtResult.mtf.rleEncodedIndices.size());
+
+    for (const auto &pair : bwtResult.mtf.rleEncodedIndices)
     {
-        bitStream.write_value(alphabetIndex, alphabetIndexBits);
+        // Max run and literal size is 255 we can use 1 byte for sizes.
+        bitStream.write_value(static_cast<azgra::byte>(pair.literalCount));
+        for (std::size_t l = 0; l < pair.literalCount; ++l)
+        {
+            bitStream.write_value(pair.literals[l], alphabetIndexBits);
+        }
+
+        bitStream.write_value(static_cast<azgra::byte>(pair.runLength));
+        bitStream.write_value(pair.runSymbol, alphabetIndexBits);
     }
 
     return bitStream.get_flushed_buffer();
@@ -175,16 +180,29 @@ azgra::ByteArray decode_bwt_mtf_rle(const azgra::ByteArray &encodedBytes)
         alphabet[i] = bitStream.read_value<azgra::byte>();
     }
 
-    const auto indicesSize = bitStream.read_value<std::size_t>();
-
     const std::size_t bitsPerIndex = bitStream.read_value<azgra::byte>();
+    const auto indicesCount = bitStream.read_value<std::size_t>();
+    const auto pairCount = bitStream.read_value<std::size_t>();
 
-    std::vector<std::size_t> indices(indicesSize);
-    for (std::size_t i = 0; i < indicesSize; ++i)
+    std::vector<RLEPair<std::size_t>> rlePairs(pairCount);
+    for (std::size_t p = 0; p < pairCount; ++p)
     {
-        indices[i] = bitStream.read_value<std::size_t>(bitsPerIndex);
+        RLEPair<std::size_t> pair;
+        pair.literalCount = bitStream.read_value<azgra::byte>();
+        pair.literals.resize(pair.literalCount);
+        for (std::size_t l = 0; l < pair.literalCount; ++l)
+        {
+            pair.literals[l] = bitStream.read_value<std::size_t>(bitsPerIndex);
+        }
+
+        pair.runLength = bitStream.read_value<azgra::byte>();
+        pair.runSymbol = bitStream.read_value<std::size_t>(bitsPerIndex);
+
+        rlePairs[p] = std::move(pair);
     }
-    MTFResult mtf(std::move(alphabet), std::move(indices));
+
+
+    MTFResult mtf(std::move(alphabet), std::move(rlePairs), indicesCount);
     const auto decodedL = decode_move_to_front(mtf);
 
     auto decodedData = decode_burrows_wheeler_transform(decodedL, I);

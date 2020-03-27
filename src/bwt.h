@@ -2,7 +2,6 @@
 
 #include "move_to_front.h"
 #include "entropy.h"
-#include "rle.h"
 #include "cyclic_span.h"
 #include <azgra/io/stream/memory_bit_stream.h>
 #include <azgra/io/binary_file_functions.h>

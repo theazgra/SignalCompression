@@ -52,7 +52,12 @@ MTFResult encode_with_move_to_front(const azgra::ByteArray &data)
             }
         }
     }
-    return MTFResult(std::move(alphabet), std::move(indices));
+
+    const auto mtf_indicesEntropy = calculate_entropy(indices);
+    fprintf(stdout, "Move-To-Front indices entropy: %.4f\n", mtf_indicesEntropy);
+
+    auto rleEncodedIndices = rle_encode(indices);
+    return MTFResult(std::move(alphabet), std::move(rleEncodedIndices), indices.size());
 }
 
 azgra::ByteArray decode_move_to_front(const MTFResult &mtf)
@@ -60,13 +65,15 @@ azgra::ByteArray decode_move_to_front(const MTFResult &mtf)
     auto alphabet = mtf.alphabet;
     std::sort(alphabet.begin(), alphabet.end());
 
-    const std::size_t resultSize = mtf.indices.size();
+    const auto indices = rle_decode(mtf.rleEncodedIndices, mtf.indicesCount);
+
+    const std::size_t resultSize = mtf.indicesCount;
     azgra::ByteArray result(resultSize);
 
     std::size_t alphabetIndex;
     for (std::size_t i = 0; i < resultSize; ++i)
     {
-        alphabetIndex = mtf.indices[i];
+        alphabetIndex = indices[i];
         result[i] = alphabet[alphabetIndex];
         move_index_to_front(alphabet, alphabetIndex);
     }

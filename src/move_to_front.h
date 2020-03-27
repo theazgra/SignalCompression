@@ -6,18 +6,21 @@
 #include <azgra/azgra.h>
 #include <azgra/span.h>
 #include <azgra/collection/enumerable_functions.h>
+#include "rle.h"
 
 struct MTFResult
 {
     azgra::ByteArray alphabet{};
-    std::vector<std::size_t> indices{};
+    std::vector<RLEPair<std::size_t>> rleEncodedIndices{};
+    std::size_t indicesCount;
 
     MTFResult() = default;
 
-    MTFResult(azgra::ByteArray &&alphabet_, std::vector<std::size_t> &&indices_)
+    MTFResult(azgra::ByteArray &&alphabet_, std::vector<RLEPair<std::size_t>> &&rleIndices, const std::size_t indicesCount_)
     {
         alphabet = std::move(alphabet_);
-        indices = std::move(indices_);
+        rleEncodedIndices = std::move(rleIndices);
+        indicesCount = indicesCount_;
     }
 
     MTFResult(const MTFResult &) = delete;
