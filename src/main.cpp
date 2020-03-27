@@ -20,23 +20,23 @@ static void test_bwt_mtf_rle(const char *inputFile)
     const double cr = static_cast<double>(sizeAfter) / static_cast<double>(sizeBefore);
     fprintf(stdout, "Compression Ratio: %.4f\n",cr);
 
-    // Test the decoding.
-//    const auto decodedBytes = decode_bwt_mtf_rle(encodedBytes);
-//
-//    // Optionally save the result.
-////    azgra::io::dump_bytes(decodedBytes, "result.txt");
-//
-//    const bool eq = std::equal(fileTextBytes.begin(), fileTextBytes.end(), decodedBytes.begin(), decodedBytes.end());
-//    if (eq)
-//    {
-//        azgra::print_colorized(azgra::ConsoleColor::ConsoleColor_Green,
-//                               "Encode/Decode successful.\n");
-//    }
-//    else
-//    {
-//        azgra::print_colorized(azgra::ConsoleColor::ConsoleColor_Red,
-//                               "Encode/Decode Failed!\n");
-//    }
+     Test the decoding.
+    const auto decodedBytes = decode_bwt_mtf_rle(encodedBytes);
+
+    // Optionally save the result.
+//    azgra::io::dump_bytes(decodedBytes, "result.txt");
+
+    const bool eq = std::equal(fileTextBytes.begin(), fileTextBytes.end(), decodedBytes.begin(), decodedBytes.end());
+    if (eq)
+    {
+        azgra::print_colorized(azgra::ConsoleColor::ConsoleColor_Green,
+                               "Encode/Decode successful.\n");
+    }
+    else
+    {
+        azgra::print_colorized(azgra::ConsoleColor::ConsoleColor_Red,
+                               "Encode/Decode Failed!\n");
+    }
 }
 
 int main(int, char **)
