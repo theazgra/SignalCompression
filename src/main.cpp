@@ -20,7 +20,7 @@ static void test_bwt_mtf_rle(const char *inputFile)
     const double cr = static_cast<double>(sizeAfter) / static_cast<double>(sizeBefore);
     fprintf(stdout, "Compression Ratio: %.4f\n",cr);
 
-     Test the decoding.
+//     Test the decoding.
     const auto decodedBytes = decode_bwt_mtf_rle(encodedBytes);
 
     // Optionally save the result.
