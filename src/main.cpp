@@ -74,16 +74,16 @@ int main(int, char **)
 {
 
     const std::vector<const char *> files = {
-            "/mnt/d/codes/git/signal_compression/data/similarity/000.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/010.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/020.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/030.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/040.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/050.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/060.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/070.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/080.txt",
-            "/mnt/d/codes/git/signal_compression/data/similarity/090.txt"
+            "../data/similarity/000.txt",
+            "../data/similarity/010.txt",
+            "../data/similarity/020.txt",
+            "../data/similarity/030.txt",
+            "../data/similarity/040.txt",
+            "../data/similarity/050.txt",
+            "../data/similarity/060.txt",
+            "../data/similarity/070.txt",
+            "../data/similarity/080.txt",
+            "../data/similarity/090.txt"
     };
 
     test_fcd(files);
