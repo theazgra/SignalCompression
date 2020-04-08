@@ -56,19 +56,18 @@ static void test_fcd(const std::vector<const char *> &files)
     azgra::Matrix<azgra::f64> fcdMatrix(files.size(), files.size());
 
     std::stringstream ss;
-    ss.precision(4);
+    ss.precision(2);
     for (std::size_t row = 0; row < fcdMatrix.rows(); ++row)
     {
         for (std::size_t col = 0; col < fcdMatrix.cols(); ++col)
         {
-            fcdMatrix.at(row, col) = calculate_fcd(dictionaries[row], dictionaries[col]);
-            ss << fcdMatrix.at(row, col) << '\t';
+            const auto fcd = calculate_fcd(dictionaries[row], dictionaries[col]);
+            fcdMatrix.at(row, col) = fcd;
+            ss << fcd << '\t';
         }
         ss << '\n';
     }
     puts(ss.str().c_str());
-
-    //fprintf(stdout, "FCD = %.4f\n", FCD);
 }
 
 int main(int, char **)

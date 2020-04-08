@@ -4,7 +4,6 @@
 
 static std::vector<azgra::StringView> get_words(const azgra::StringView &text)
 {
-
     const azgra::string::SmartStringView ssw(text);
     // We don't need SmartStringViews.
     const auto smartStringViewWords = ssw.split_to_words();
@@ -20,6 +19,7 @@ robin_hood::unordered_set<azgra::StringView> get_lzw_dictionary(const azgra::Str
 {
     const auto words = get_words(text);
     robin_hood::unordered_set<azgra::StringView> dictionary;
+
     // Initialize dictionary with all unique words.
     for (const auto word : words)
     {
@@ -28,8 +28,6 @@ robin_hood::unordered_set<azgra::StringView> get_lzw_dictionary(const azgra::Str
 
     azgra::StringView IWord = words[0];
     // We skip the first word, which must be in the dictionary.
-    std::size_t addedCount = 0;
-    std::size_t foundCount = 0;
     bool lastWasFound = false;
     for (std::size_t i = 1; i < words.size(); ++i)
     {
@@ -38,7 +36,6 @@ robin_hood::unordered_set<azgra::StringView> get_lzw_dictionary(const azgra::Str
         IWord = azgra::StringView(IWord.data(), IWord.size() + words[i].size() + 1);
         if (dictionary.contains(IWord))
         {
-            ++foundCount;
             lastWasFound = true;
             continue;
         }
@@ -46,17 +43,10 @@ robin_hood::unordered_set<azgra::StringView> get_lzw_dictionary(const azgra::Str
         // Add IWord to dictionary.
         dictionary.insert(IWord);
         IWord = words[i];
-        ++addedCount;
     }
 
     if (!lastWasFound)
     { dictionary.insert(words[words.size() - 1]); }
-
-
-//    fprintf(stdout, "Added to dictionary: %lu\nFound in dictionary: %lu\nDictionary size: %lu\n",
-//            addedCount,
-//            foundCount,
-//            dictionary.size());
 
     return dictionary;
 }
@@ -66,10 +56,16 @@ azgra::f64 calculate_fcd(const robin_hood::unordered_set<azgra::StringView> &xDi
 {
     const auto xSize = static_cast<azgra::f64> (xDict.size());
 
-    SetIntersectionCounter<azgra::StringView> counter;
-    std::set_intersection(xDict.begin(), xDict.end(), yDict.begin(), yDict.end(), std::back_inserter(counter));
+    std::size_t interSecSize = 0;
+    for (const auto xVal : xDict)
+    {
+        if (yDict.contains(xVal))
+        {
+            ++interSecSize;
+        }
+    }
 
-    const auto intersectionSize = static_cast<azgra::f64>(counter.count);
+    const auto intersectionSize = static_cast<azgra::f64>(interSecSize);
 
     const azgra::f64 FCD = (xSize - intersectionSize) / xSize;
     return FCD;
