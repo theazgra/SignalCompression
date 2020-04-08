@@ -26,7 +26,6 @@ robin_hood::unordered_set<azgra::StringView> get_lzw_dictionary(const azgra::Str
         dictionary.insert(word);
     }
 
-
     azgra::StringView IWord = words[0];
     // We skip the first word, which must be in the dictionary.
     std::size_t addedCount = 0;
@@ -51,7 +50,7 @@ robin_hood::unordered_set<azgra::StringView> get_lzw_dictionary(const azgra::Str
     }
 
     if (!lastWasFound)
-    { dictionary.insert(IWord); }
+    { dictionary.insert(words[words.size() - 1]); }
 
 
 //    fprintf(stdout, "Added to dictionary: %lu\nFound in dictionary: %lu\nDictionary size: %lu\n",
