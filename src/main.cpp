@@ -3,6 +3,8 @@
 #include <azgra/io/text_file_functions.h>
 #include <azgra/io/binary_file_functions.h>
 #include "lzw.h"
+#include <azgra/matrix.h>
+#include <sstream>
 
 [[maybe_unused]] static void test_bwt_mtf_rle(const char *inputFile)
 {
@@ -40,27 +42,52 @@
     }
 }
 
-static void test_fcd(const char *fileA, const char *fileB)
+static void test_fcd(const std::vector<const char *> &files)
 {
-    using namespace azgra::string;
-    const std::string fileAText = azgra::io::read_text_file(fileA);
-    const std::string fileBText = azgra::io::read_text_file(fileB);
+    auto dictionaries = std::vector<robin_hood::unordered_set<azgra::StringView>>(files.size());
+    auto fileTexts = std::vector<std::string>(files.size());
 
-    const auto aDict = get_lzw_dictionary(fileAText);
-    const auto bDict = get_lzw_dictionary(fileBText);
+    for (std::size_t i = 0; i < files.size(); ++i)
+    {
+        fileTexts[i] = azgra::io::read_text_file(files[i]);
+        dictionaries[i] = get_lzw_dictionary(fileTexts[i]);
+    }
 
-    const auto FCD = calculate_fcd(aDict, bDict);
-    fprintf(stdout, "FCD = %.4f\n", FCD);
+    azgra::Matrix<azgra::f64> fcdMatrix(files.size(), files.size());
+
+    std::stringstream ss;
+    ss.precision(4);
+    for (std::size_t row = 0; row < fcdMatrix.rows(); ++row)
+    {
+        for (std::size_t col = 0; col < fcdMatrix.cols(); ++col)
+        {
+            fcdMatrix.at(row, col) = calculate_fcd(dictionaries[row], dictionaries[col]);
+            ss << fcdMatrix.at(row, col) << '\t';
+        }
+        ss << '\n';
+    }
+    puts(ss.str().c_str());
+
+    //fprintf(stdout, "FCD = %.4f\n", FCD);
 }
 
 int main(int, char **)
 {
-#if DEBUG
-    test_fcd("/mnt/d/codes/git/signal_compression/data/similarity/000.txt",
-             "/mnt/d/codes/git/signal_compression/data/similarity/010.txt");
-#else
-    test_fcd("../data/similarity/000.txt", "../data/similarity/010.txt");
-#endif
+
+    const std::vector<const char *> files = {
+            "/mnt/d/codes/git/signal_compression/data/similarity/000.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/010.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/020.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/030.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/040.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/050.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/060.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/070.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/080.txt",
+            "/mnt/d/codes/git/signal_compression/data/similarity/090.txt"
+    };
+
+    test_fcd(files);
 
     return 0;
 }
