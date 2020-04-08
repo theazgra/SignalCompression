@@ -19,15 +19,12 @@ static std::vector<azgra::StringView> get_words(const azgra::StringView &text)
 robin_hood::unordered_set<azgra::StringView> get_lzw_dictionary(const azgra::StringView &text)
 {
     const auto words = get_words(text);
-    const auto uniqueWords = azgra::collection::distinct(words.begin(), words.end());
-
-    robin_hood::unordered_set<azgra::StringView> dictionary(words.size());
+    robin_hood::unordered_set<azgra::StringView> dictionary;
     // Initialize dictionary with all unique words.
-    for (const auto uniqueWord : uniqueWords)
+    for (const auto word : words)
     {
-        dictionary.insert(uniqueWord);
+        dictionary.insert(word);
     }
-    assert(dictionary.size() == uniqueWords.size());
 
 
     azgra::StringView IWord = words[0];
@@ -53,7 +50,8 @@ robin_hood::unordered_set<azgra::StringView> get_lzw_dictionary(const azgra::Str
         ++addedCount;
     }
 
-    if (!lastWasFound) {dictionary.insert(IWord);}
+    if (!lastWasFound)
+    { dictionary.insert(IWord); }
 
 
 //    fprintf(stdout, "Added to dictionary: %lu\nFound in dictionary: %lu\nDictionary size: %lu\n",
