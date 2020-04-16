@@ -1,0 +1,233 @@
+bible.txt;gzip;1
+File: bible.txt	CR: 0.3684	Speed: 74.5037 MB/s
+bible.txt;gzip;2
+File: bible.txt	CR: 0.3499	Speed: 68.0007 MB/s
+bible.txt;gzip;3
+File: bible.txt	CR: 0.3323	Speed: 52.1161 MB/s
+bible.txt;gzip;4
+File: bible.txt	CR: 0.3163	Speed: 54.0570 MB/s
+bible.txt;gzip;5
+File: bible.txt	CR: 0.3027	Speed: 37.0406 MB/s
+bible.txt;gzip;6
+File: bible.txt	CR: 0.2945	Speed: 22.6264 MB/s
+bible.txt;gzip;7
+File: bible.txt	CR: 0.2926	Speed: 18.1577 MB/s
+bible.txt;gzip;8
+File: bible.txt	CR: 0.2909	Speed: 11.0276 MB/s
+bible.txt;gzip;9
+File: bible.txt	CR: 0.2909	Speed: 10.1223 MB/s
+bible.txt;lzma;1
+File: bible.txt	CR: 0.2832	Speed: 16.3482 MB/s
+bible.txt;lzma;2
+File: bible.txt	CR: 0.2683	Speed: 9.2383 MB/s
+bible.txt;lzma;3
+File: bible.txt	CR: 0.2612	Speed: 5.1644 MB/s
+bible.txt;lzma;4
+File: bible.txt	CR: 0.2335	Speed: 2.9640 MB/s
+bible.txt;lzma;5
+File: bible.txt	CR: 0.2195	Speed: 2.3144 MB/s
+bible.txt;lzma;6
+File: bible.txt	CR: 0.2187	Speed: 2.3120 MB/s
+bible.txt;lzma;7
+File: bible.txt	CR: 0.2187	Speed: 1.6350 MB/s
+bible.txt;lzma;8
+File: bible.txt	CR: 0.2187	Speed: 1.7610 MB/s
+bible.txt;lzma;9
+File: bible.txt	CR: 0.2187	Speed: 1.7584 MB/s
+bible.txt;bzip2;1
+File: bible.txt	CR: 0.2476	Speed: 14.5935 MB/s
+bible.txt;bzip2;2
+File: bible.txt	CR: 0.2321	Speed: 14.7031 MB/s
+bible.txt;bzip2;3
+File: bible.txt	CR: 0.2241	Speed: 13.8366 MB/s
+bible.txt;bzip2;4
+File: bible.txt	CR: 0.2199	Speed: 14.0938 MB/s
+bible.txt;bzip2;5
+File: bible.txt	CR: 0.2168	Speed: 13.8629 MB/s
+bible.txt;bzip2;6
+File: bible.txt	CR: 0.2127	Speed: 13.7055 MB/s
+bible.txt;bzip2;7
+File: bible.txt	CR: 0.2124	Speed: 13.4788 MB/s
+bible.txt;bzip2;8
+File: bible.txt	CR: 0.2105	Speed: 13.2691 MB/s
+bible.txt;bzip2;9
+File: bible.txt	CR: 0.2089	Speed: 13.2768 MB/s
+dblp.xml.100MB;gzip;1
+File: dblp.xml.100MB	CR: 0.2111	Speed: 110.9125 MB/s
+dblp.xml.100MB;gzip;2
+File: dblp.xml.100MB	CR: 0.2015	Speed: 107.0246 MB/s
+dblp.xml.100MB;gzip;3
+File: dblp.xml.100MB	CR: 0.1956	Speed: 98.1673 MB/s
+dblp.xml.100MB;gzip;4
+File: dblp.xml.100MB	CR: 0.1871	Speed: 75.4177 MB/s
+dblp.xml.100MB;gzip;5
+File: dblp.xml.100MB	CR: 0.1805	Speed: 66.4757 MB/s
+dblp.xml.100MB;gzip;6
+File: dblp.xml.100MB	CR: 0.1736	Speed: 53.0555 MB/s
+dblp.xml.100MB;gzip;7
+File: dblp.xml.100MB	CR: 0.1715	Speed: 47.9334 MB/s
+dblp.xml.100MB;gzip;8
+File: dblp.xml.100MB	CR: 0.1686	Speed: 38.1103 MB/s
+dblp.xml.100MB;gzip;9
+File: dblp.xml.100MB	CR: 0.1686	Speed: 36.0037 MB/s
+dblp.xml.100MB;lzma;1
+File: dblp.xml.100MB	CR: 0.1444	Speed: 30.8842 MB/s
+dblp.xml.100MB;lzma;2
+File: dblp.xml.100MB	CR: 0.1380	Speed: 18.6723 MB/s
+dblp.xml.100MB;lzma;3
+File: dblp.xml.100MB	CR: 0.1342	Speed: 10.5221 MB/s
+dblp.xml.100MB;lzma;4
+File: dblp.xml.100MB	CR: 0.1428	Speed: 7.7248 MB/s
+dblp.xml.100MB;lzma;5
+File: dblp.xml.100MB	CR: 0.1301	Speed: 4.4936 MB/s
+dblp.xml.100MB;lzma;6
+File: dblp.xml.100MB	CR: 0.1171	Speed: 3.1310 MB/s
+dblp.xml.100MB;lzma;7
+File: dblp.xml.100MB	CR: 0.1144	Speed: 2.7588 MB/s
+dblp.xml.100MB;lzma;8
+File: dblp.xml.100MB	CR: 0.1120	Speed: 2.8008 MB/s
+dblp.xml.100MB;lzma;9
+File: dblp.xml.100MB	CR: 0.1103	Speed: 2.2003 MB/s
+dblp.xml.100MB;bzip2;1
+File: dblp.xml.100MB	CR: 0.1413	Speed: 13.0176 MB/s
+dblp.xml.100MB;bzip2;2
+File: dblp.xml.100MB	CR: 0.1289	Speed: 12.4272 MB/s
+dblp.xml.100MB;bzip2;3
+File: dblp.xml.100MB	CR: 0.1231	Speed: 10.9471 MB/s
+dblp.xml.100MB;bzip2;4
+File: dblp.xml.100MB	CR: 0.1193	Speed: 11.3242 MB/s
+dblp.xml.100MB;bzip2;5
+File: dblp.xml.100MB	CR: 0.1170	Speed: 10.1243 MB/s
+dblp.xml.100MB;bzip2;6
+File: dblp.xml.100MB	CR: 0.1150	Speed: 10.8887 MB/s
+dblp.xml.100MB;bzip2;7
+File: dblp.xml.100MB	CR: 0.1133	Speed: 10.3598 MB/s
+dblp.xml.100MB;bzip2;8
+File: dblp.xml.100MB	CR: 0.1122	Speed: 10.4546 MB/s
+dblp.xml.100MB;bzip2;9
+File: dblp.xml.100MB	CR: 0.1110	Speed: 10.0884 MB/s
+english.100MB;gzip;1
+File: english.100MB	CR: 0.4494	Speed: 63.3972 MB/s
+english.100MB;gzip;2
+File: english.100MB	CR: 0.4303	Speed: 56.1590 MB/s
+english.100MB;gzip;3
+File: english.100MB	CR: 0.4120	Speed: 42.5707 MB/s
+english.100MB;gzip;4
+File: english.100MB	CR: 0.3999	Speed: 43.7603 MB/s
+english.100MB;gzip;5
+File: english.100MB	CR: 0.3852	Speed: 29.1329 MB/s
+english.100MB;gzip;6
+File: english.100MB	CR: 0.3784	Speed: 19.1512 MB/s
+english.100MB;gzip;7
+File: english.100MB	CR: 0.3772	Speed: 16.3726 MB/s
+english.100MB;gzip;8
+File: english.100MB	CR: 0.3764	Speed: 12.7047 MB/s
+english.100MB;gzip;9
+File: english.100MB	CR: 0.3764	Speed: 12.8018 MB/s
+english.100MB;lzma;1
+File: english.100MB	CR: 0.3025	Speed: 14.3931 MB/s
+english.100MB;lzma;2
+File: english.100MB	CR: 0.2768	Speed: 7.9337 MB/s
+english.100MB;lzma;3
+File: english.100MB	CR: 0.2650	Speed: 3.7173 MB/s
+english.100MB;lzma;4
+File: english.100MB	CR: 0.2326	Speed: 2.3155 MB/s
+english.100MB;lzma;5
+File: english.100MB	CR: 0.2241	Speed: 1.8639 MB/s
+english.100MB;lzma;6
+File: english.100MB	CR: 0.2240	Speed: 1.8978 MB/s
+english.100MB;lzma;7
+File: english.100MB	CR: 0.2199	Speed: 1.5275 MB/s
+english.100MB;lzma;8
+File: english.100MB	CR: 0.2173	Speed: 1.3432 MB/s
+english.100MB;lzma;9
+File: english.100MB	CR: 0.2158	Speed: 1.2528 MB/s
+english.100MB;bzip2;1
+File: english.100MB	CR: 0.3284	Speed: 13.9355 MB/s
+english.100MB;bzip2;2
+File: english.100MB	CR: 0.3100	Speed: 13.5813 MB/s
+english.100MB;bzip2;3
+File: english.100MB	CR: 0.3004	Speed: 12.1467 MB/s
+english.100MB;bzip2;4
+File: english.100MB	CR: 0.2943	Speed: 12.8072 MB/s
+english.100MB;bzip2;5
+File: english.100MB	CR: 0.2906	Speed: 13.0028 MB/s
+english.100MB;bzip2;6
+File: english.100MB	CR: 0.2870	Speed: 12.3159 MB/s
+english.100MB;bzip2;7
+File: english.100MB	CR: 0.2848	Speed: 12.3976 MB/s
+english.100MB;bzip2;8
+File: english.100MB	CR: 0.2824	Speed: 12.7576 MB/s
+english.100MB;bzip2;9
+File: english.100MB	CR: 0.2807	Speed: 12.3029 MB/s
+sources.100MB;gzip;1
+File: sources.100MB	CR: 0.2852	Speed: 76.2580 MB/s
+sources.100MB;gzip;2
+File: sources.100MB	CR: 0.2719	Speed: 77.3614 MB/s
+sources.100MB;gzip;3
+File: sources.100MB	CR: 0.2621	Speed: 59.0090 MB/s
+sources.100MB;gzip;4
+File: sources.100MB	CR: 0.2447	Speed: 58.2948 MB/s
+sources.100MB;gzip;5
+File: sources.100MB	CR: 0.2347	Speed: 43.1590 MB/s
+sources.100MB;gzip;6
+File: sources.100MB	CR: 0.2305	Speed: 31.1226 MB/s
+sources.100MB;gzip;7
+File: sources.100MB	CR: 0.2293	Speed: 27.2906 MB/s
+sources.100MB;gzip;8
+File: sources.100MB	CR: 0.2285	Speed: 18.1604 MB/s
+sources.100MB;gzip;9
+File: sources.100MB	CR: 0.2282	Speed: 13.4217 MB/s
+sources.100MB;lzma;1
+File: sources.100MB	CR: 0.2026	Speed: 22.7539 MB/s
+sources.100MB;lzma;2
+File: sources.100MB	CR: 0.1946	Speed: 13.8560 MB/s
+sources.100MB;lzma;3
+File: sources.100MB	CR: 0.1895	Speed: 8.2960 MB/s
+sources.100MB;lzma;4
+File: sources.100MB	CR: 0.1778	Speed: 4.9381 MB/s
+sources.100MB;lzma;5
+File: sources.100MB	CR: 0.1645	Speed: 3.2985 MB/s
+sources.100MB;lzma;6
+File: sources.100MB	CR: 0.1621	Speed: 2.8836 MB/s
+sources.100MB;lzma;7
+File: sources.100MB	CR: 0.1586	Speed: 2.6141 MB/s
+sources.100MB;lzma;8
+File: sources.100MB	CR: 0.1554	Speed: 2.3493 MB/s
+sources.100MB;lzma;9
+File: sources.100MB	CR: 0.1528	Speed: 2.1654 MB/s
+sources.100MB;bzip2;1
+File: sources.100MB	CR: 0.2163	Speed: 13.9534 MB/s
+sources.100MB;bzip2;2
+File: sources.100MB	CR: 0.2056	Speed: 14.2951 MB/s
+sources.100MB;bzip2;3
+File: sources.100MB	CR: 0.2009	Speed: 14.0058 MB/s
+sources.100MB;bzip2;4
+File: sources.100MB	CR: 0.1981	Speed: 13.9843 MB/s
+sources.100MB;bzip2;5
+File: sources.100MB	CR: 0.1963	Speed: 13.6382 MB/s
+sources.100MB;bzip2;6
+File: sources.100MB	CR: 0.1952	Speed: 13.6542 MB/s
+sources.100MB;bzip2;7
+File: sources.100MB	CR: 0.1941	Speed: 13.3945 MB/s
+sources.100MB;bzip2;8
+File: sources.100MB	CR: 0.1927	Speed: 12.8994 MB/s
+sources.100MB;bzip2;9
+File: sources.100MB	CR: 0.1924	Speed: 13.0913 MB/s
+
+bible.txt;rp
+CR: 0.2426
+bible.txt;rpi
+CR: 0.2367
+dblp.xml.100MB;rp
+CR: 0.1219
+dblp.xml.100MB;rpi
+CR: 0.1371
+english.100MB;rp
+CR: 0.2476
+english.100MB;rpi
+CR: 0.3107
+sources.100MB;rp
+CR: 0.2212
+sources.100MB;rpi
+CR: 0.2304

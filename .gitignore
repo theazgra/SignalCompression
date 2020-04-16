@@ -7,3 +7,14 @@ data/test.bmp
 data/test.png
 data/test.txt
 data/test.txt
+data/project/
+external/
+*.log
+*.fls
+*.out
+*.toc
+*.gz
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
