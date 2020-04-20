@@ -3,6 +3,7 @@
 #include <azgra/io/text_file_functions.h>
 #include <azgra/io/binary_file_functions.h>
 #include "lzw.h"
+#include "entropy.h"
 #include <azgra/matrix.h>
 #include <sstream>
 
@@ -42,7 +43,7 @@
     }
 }
 
-static void test_fcd(const std::vector<const char *> &files)
+[[maybe_unused]] static void test_fcd(const std::vector<const char *> &files)
 {
     auto dictionaries = std::vector<robin_hood::unordered_set<azgra::StringView>>(files.size());
     auto fileTexts = std::vector<std::string>(files.size());
@@ -70,23 +71,34 @@ static void test_fcd(const std::vector<const char *> &files)
     puts(ss.str().c_str());
 }
 
-int main(int, char **)
+int main(int argc, char **argv)
 {
+    if (argc < 2)
+    {
+        fprintf(stderr, "Provide input file for entropy calculation.\n");
+        return 1;
+    }
+    const auto inputFile = argv[1];
+    const auto input = azgra::io::read_text_file(inputFile);
+    azgra::ByteArray inputData(input.begin(), input.end());
+    const auto symbolCount = inputData.size();
+    const auto entropy = calculate_entropy(inputData);
 
-    const std::vector<const char *> files = {
-            "../data/similarity/000.txt",
-            "../data/similarity/010.txt",
-            "../data/similarity/020.txt",
-            "../data/similarity/030.txt",
-            "../data/similarity/040.txt",
-            "../data/similarity/050.txt",
-            "../data/similarity/060.txt",
-            "../data/similarity/070.txt",
-            "../data/similarity/080.txt",
-            "../data/similarity/090.txt"
-    };
-
-    test_fcd(files);
+    fprintf(stdout, "Entropy of %s: %.4f; Symbol Count: %lu\n", inputFile, entropy, symbolCount);
+//    const std::vector<const char *> files = {
+//            "../data/similarity/000.txt",
+//            "../data/similarity/010.txt",
+//            "../data/similarity/020.txt",
+//            "../data/similarity/030.txt",
+//            "../data/similarity/040.txt",
+//            "../data/similarity/050.txt",
+//            "../data/similarity/060.txt",
+//            "../data/similarity/070.txt",
+//            "../data/similarity/080.txt",
+//            "../data/similarity/090.txt"
+//    };
+//
+//    test_fcd(files);
 
     return 0;
 }

@@ -18,3 +18,5 @@ external/
 *.bbl
 *.blg
 *.fdb_latexmk
+.Rproj.user
+.Rhistory
