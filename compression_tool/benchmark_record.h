@@ -8,4 +8,5 @@ struct CompressionResult
     double compressionRatio{1.0};
     double compressionTimeMS{0.0};
     double speed{0.0};
+    double kB_sec{0.0};
 };

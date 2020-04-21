@@ -10,10 +10,40 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{pgfplots}
 \usepackage{tikz}
 \usepackage{siunitx}
 \usepackage{booktabs}
 \usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{geometry}
+\newgeometry{vmargin={40mm}, hmargin={25mm,25mm}}
+\renewcommand\refname{Literatura}
+
+\pgfplotsset{
+    compat=1.9, 
+    % width=\linewidth
+    /pgfplots/ybar legend/.style={
+    /pgfplots/legend image code/.code={%
+        \draw[##1,/tikz/.cd,yshift=-0.25em]
+        (0cm,0cm) rectangle (3pt,0.8em);},
+    },
+    /pgf/number format/use comma,
+    /pgf/number format/1000 sep={\ }
+}
+\pgfplotsset{%
+    axis line origin/.style args={#1,#2}{
+        x filter/.append code={ % Check for empty or filtered out numbers
+            \ifx\pgfmathresult\empty\else\pgfmathparse{\pgfmathresult-#1}\fi
+        },
+        y filter/.append code={
+            \ifx\pgfmathresult\empty\else\pgfmathparse{\pgfmathresult-#2}\fi
+        },
+        xticklabel=\pgfmathparse{\tick+#1}\pgfmathprintnumber{\pgfmathresult},
+        yticklabel=\pgfmathparse{\tick+#2}\pgfmathprintnumber{\pgfmathresult}
+    }
+}
 
 
 \author{Moravec Vojtěch}
@@ -28,11 +58,13 @@
 % \newpage
 
 \section{Popis algoritmu Re--Pair}
-Algoritmus Re--Pair, poprvé představen v článku \cite{892708}, je kompresní algoritmus založený na bezkontextové gramatice. Na vstupu dostává tento algoritmus řetězec znaků, např. text, který převede na řetězec terminálních a neterminálních symbolů bezkontextové gramatiky. Autoři zařadili tento algoritmus do skupiny \emph{off-line} slovníkových kompresních metod. 
+Algoritmus Re--Pair, poprvé představen v článku \cite{892708}, je kompresní algoritmus založený na využití bezkontextové gramatiky. Na vstupu dostává tento algoritmus řetězec znaků, např. text, který převede na řetězec terminálních a neterminálních symbolů bezkontextové gramatiky. Autoři zařadili tento algoritmus do skupiny tzv. \emph{off-line} slovníkových kompresních metod.
 
-\emph{Off-line} metody využívají celého vstupního řetězce k vytvoření slovníku. Tyto metody tedy musí načíst celý vstupní soubor nebo jeho část do paměti. Části se stále rozumí mnohem větší část, než využívají \emph{on-line} metody.  Algoritmy v \emph{on-line} skupině, tvoří slovník pomocí té části vstupu, kterou již přečetli, jak je tomu například u slovníkových kompresí LZ. Nevýhodou \emph{off-line} metod je tedy velká paměťová náročnost. Oproti tomu výhodou, důvodem, proč vůbec uvažovat o této skupině, je možnost vytvořit slovníkové fráze, vedoucí k lepším kompresním výsledkům. Díky znalosti vstupních dat jako celku známe obecně lepší souvislosti.
+\emph{Off-line} metody využívají celého vstupního řetězce k vytvoření slovníku. Tyto metody tedy musí načíst celý vstupní soubor nebo jeho část do paměti. V minulosti nebyly příliš využívány kvůli limitované paměti počítače, která avšak v současnosti stále roste. Navíc je rychlost komprese \emph{off-line} metod vyšší, než je tomu u druhé skupiny. Uvedli jsme, že může být také načtena pouze část souboru, avšak tato část je stále několikrát větší, než je tomu u \emph{on-line} metod, které většinou využívají plovoucí okno. Algoritmy v \emph{on-line} skupině, tvoří slovník pomocí té části vstupu, kterou již přečetli, jak je tomu například \linebreak u slovníkových kompresí LZ. 
 
-V tomto dokumentu budeme popisovat kompresi textu a očekáváme od čtenáře základní znalost bezkontextové gramatiky. Algoritmy využívají bezkontextové gramatiky převádějí vstupní text na sekvenci terminálních a neterminálních symbolů. Aby mohli provést tuto transformaci musí nalézt přepisovací pravidla, které budou vést k maximální kompresi. Ukázku, jak můžeme transformovat text \texttt{abrakadabra} pomocí bezkontextové gramatiky nalezneme v Tabulce \ref{tab:cfg}. Záměrně jsme využili přepisovací pravidla, které mají na pravé straně pouze dva symboly.
+Výhodou \emph{off-line} metod je možnost vytvořit slovníkové objekty, které povedou k lepším kompresním výsledkům. Toto je dáno tím, že díky znalosti větší části textu víme víc o samotném kontextu. Oproti tomu nevýhodou je velká paměťová náročnost, která nedovoluje použití těchto algoritmů na velké soubory.
+
+V tomto dokumentu budeme popisovat kompresi textu a očekáváme od čtenáře základní znalost bezkontextové gramatiky. Algoritmy využívající bezkontextové gramatiky převádějí vstupní text na sekvenci terminálních a neterminálních symbolů. Aby mohli provést tuto transformaci musí nalézt přepisovací pravidla, které budou vést k maximální kompresi. Ukázku, jak můžeme transformovat text \texttt{abrakadabra} pomocí bezkontextové gramatiky nalezneme v Tabulce \ref{tab:cfg}. Záměrně jsme využili přepisovací pravidla, které mají na pravé straně pouze dva symboly, jak je tomu u algoritmu Re--Pair.
 
 \begin{table}[h!]
     \centering
@@ -49,9 +81,9 @@ V tomto dokumentu budeme popisovat kompresi textu a očekáváme od čtenáře z
     \label{tab:cfg}
 \end{table}
 
-Je tedy zřejmé, že abeceda vzniklá na konci komprese, bude oproti terminálním znakům z textu, obsahovat také nové neterminální symboly. Výsledkem algoritmu je tedy řetězec a množina přepisovacích pravidel. Obě tyto informace musí být uloženy v komprimovaném souboru, nebo přeneseny přes síť. K zakódování se většinou využívá různých entropických metod, generující kódy proměnlivé délky, jako je například Huffmanovo kódování nebo Aritmetické kódování.
+Je tedy zřejmé, že abeceda vzniklá na konci komprese, bude oproti originálním znakům ze vstupního textu, obsahovat také nové neterminální symboly. Výsledkem algoritmu je tedy řetězec symbolů a množina přepisovacích pravidel. Obě tyto informace musí být uloženy v komprimovaném souboru, nebo přeneseny přes síť. K zakódování se většinou využívá různých entropických metod, generující kódy proměnlivé délky, jako je například Huffmanovo kódování nebo Aritmetické kódování.
 
-Samotná název Re--Pair je zkratkou anglického \emph{Recursive Pairing}, který už sám o sobě napovídá, že se bude jednat o metodu využívající určité rekurze a párování. Originální algoritmus vždy nahrazuje nejčetnější pár v textu. Párem rozumíme dvojici terminálních nebo neterminálních symbolů. Označíme-li pomocí malých písmen terminální symboly a pomocí velkých písmen neterminální symboly, tak mohou nastat čtyři situace:
+Samotná název Re--Pair je zkratkou anglického \emph{Recursive Pairing}, který už sám o sobě napovídá, že se bude jednat o metodu využívající určité rekurze a párování. Originální algoritmus vždy nahrazuje nejčetnější pár v textu. Párem rozumíme dvojici terminálních nebo neterminálních symbolů. Označíme-li pomocí malých písmen terminální symboly \linebreak a pomocí velkých písmen neterminální symboly, tak mohou nastat čtyři situace:
 
 \begin{itemize}
     \item ab
@@ -60,26 +92,213 @@ Samotná název Re--Pair je zkratkou anglického \emph{Recursive Pairing}, kter�
     \item Bc
 \end{itemize}
 
-\noindent Algoritmus nijak neupřednostňuje žádnou z nich. Nahrazování probíhá do té doby, dokud se v nahrazeném textu nachází určitý pár alespoň dvakrát. Postupně upravovaný text je dobrý způsob, jak si představit fungování algoritmu, ale při samotném běhu není žádné nahrazování prováděno. Dále bude popsáno, jak dokáže algoritmus postupně redukovat text a přitom vědět, v jakém stavu se text zrovna nachází.
+\noindent Algoritmus nijak neupřednostňuje žádnou z nich. Nahrazování probíhá do té doby, dokud se v nahrazeném textu nachází určitý pár alespoň dvakrát. Nutno podotknout, že algoritmus Re--Pair při běhu neprovádí žádné úplné substituce v textu. Substituce by pouze vedli ke zpomalení. Dále bude popsáno, jak dokáže algoritmus postupně redukovat text \linebreak a přitom vědět, v jakém stavu se text zrovna nachází.
+
+Obecně se dá celý algoritmus popsat tímto velmi zjednodušeným pseudokódem \ref{alg:pseudo}. Četností páru, je přímo myšleno počet výskytu daného páru v textu. Během nahrazování může nastat situace, že více párů má maximální četnost. V originální práci uvedli, že volba, který z těchto páru bude nahrazen jako první, hraje minimální roli vzhledem \linebreak k výsledku komprese. Jednou ze strategií, jak řešit tento problém, je například zvolit pár, který byl zatím nejméně krát použit.
+
+\begin{algorithm}
+    \caption{Základní princip nahrazování párů}
+    \begin{algorithmic}
+        \STATE 1. Nalezni symboly $c$ a $d$, takové, že $cd$ je nejčetnější pár v celém textu
+        \STATE 2. Vytvoř nový (neterminální) symbol $A$ a nahraď všechny páry $cd$ symbolem $A$
+        \STATE 3. Jestliže existuje nějaký pár s četností alespoň 2 pokračuj 1. krokem
+    \end{algorithmic}
+    \label{alg:pseudo}
+\end{algorithm}
+
+\subsection{Implementační detaily}
+Návrh implementace byla velmi důležitá část originální práce, neboť zde popisovaná komprese se dá řešit několika způsoby, ale dosáhnout lineární časové složitosti $O(n)$ není tak jednoduché. Základem implementace jsou tři různé datové struktury.
+\begin{enumerate}
+    \item Sekvence symbolů $w$
+    \begin{itemize}
+        \item implementována jako pole symbolů
+        \item na začátku je toto pole naplněno vstupním textem
+        \item každý prvek pole $w[i]$ obsahuje strukturu obsahující tři čísla
+        \begin{itemize}
+            \item číslo $C$ -- reprezentující symbol,
+            \item číslo $n$ -- kde $n > i$. Následující pozice v sekvenci, na které začíná stejný pár jako na pozici $i$,
+            \item číslo $p$ -- kde $p < i$. Předešlá pozice v sekvenci, na které začíná stejný pár jako na pozici $i$.
+        \end{itemize}
+    \end{itemize}
+    \item Hashovací tabulka
+    \begin{itemize}
+        \item Obsahuje všechny aktivní páry, které mohou být nahrazeny
+    \end{itemize}
+    \item Prioritní fronta
+    \begin{itemize}
+        \item implementována jako pole cca $\sqrt{n}$ seznamů, které jsou propojeny
+        \item na začátku fronty je seznam s páry, maximální četnosti
+        \item každý další seznam obsahuje páry s menší četností než předcházející seznam
+    \end{itemize}
+\end{enumerate}
+
+Čísla $n$ a $p$ slouží jako ukazatele na další výskyty páru. Tyto ukazatele nám dovolují pracovat se Sekvencí jako s obousměrně spojovým seznamem. Navíc ukazatelé také slouží k orientaci v "upravovaném" textu. Během běhu algoritmu vznikají v textu tzv. prázdná místa, které jsou těmito ukazateli automaticky přeskakována. Toto se bude hodit při samotném nahrazování. Obě datové struktury, hashovací tabulka i prioritní fronta potřebují stejnou informaci o páru, a proto je tento pár většinou implementován pomocí struktury \emph{Pair}, která obsahuje následující informace.
+\begin{itemize}
+    \item \emph{left} -- levý symbol páru,
+    \item \emph{right} -- pravý symbol páru,
+    \item \emph{frequency} -- četnost výskytu,
+    \item \emph{hash\_next} -- ukazatel na další \emph{Pair} se stejným hashem,
+    \item \emph{queue\_next} -- ukazatel na další \emph{Pair} se stejnou četností,
+    \item \emph{queue\_previous} -- ukazatel na předcházející \emph{Pair} se stejnou četností,
+    \item \emph{first\_position} -- pozice prvního výskytu páru v Sekvenci,
+    \item \emph{last\_position} -- pozice posledního výskytu páru v Sekvenci.
+\end{itemize}
+
+Inicializace algoritmu probíhá následovně. Do sekvence se naplní vstupní text a lineárním skenem se naleznou všechny páry s jejich četností výskytu. Dle četností je naplněna prioritní fronta a páry jsou vloženy do hashovací tabulky. Složitost inicializace je tedy $O(n)$.
+
+Samotné nahrazení, které bylo druhým krokem v Algoritmu \ref{alg:pseudo}, teď popíšeme v Algoritmu \ref{alg:replacement}.
+
+\begin{algorithm}
+    \caption{Nahrazení páru}
+    \begin{algorithmic}
+        \STATE 1. Najdi první nebo další výskyt nahrazovaného páru $cd$. Identifikuj sousedící symboly $x$ a $y$, které dohromady tvoří $xcdy$.
+        \STATE 2. Sniž četnost párů $xc$ a $dy$. Jestliže některý z těchto dvou párů dosáhne četnosti jedna nebo menší, smaž jej z prioritní fronty.
+        \STATE 3. Nahraď $cd$ novým symbolem $A$, z řetězce $xcdy$ dostaneme $xAy$.
+        \STATE 4. Zvyš četnost párů $xA$ a $Ay$. Pokud pár ještě neexistuje tak jej vytvoř, vlož do fronty a hashovací tabulky.
+    \end{algorithmic}
+    \label{alg:replacement}
+\end{algorithm}
+
+Jelikož při každém nahrazení se délka textu zmenšuje, je celkový počet nahrazení $O(n)$. Všechny operace uvedeny v Algoritmu \ref{alg:replacement} mohou být provedeny v konstantním čase, díky datovým strukturám, které jsme uvedli dříve. První a třetí krok algoritmu jsou provedeny v konstantním čase pomocí ukazatelů $n$ a $p$ v Sekvenci. Zbylé dva kroky modifikují četnosti párů, a je tedy nutná aktualizace prioritní fronty. Díky tomu, že fronta je implementována pomocí spojových seznamů je přesun ze seznamu do méně prioritního seznamu proveden \linebreak v konstantním čase. Můžeme si všimnout, že četnost aktivních párů nikdy neroste. Četnost pouze klesá, když je jeden ze symbolů páru absorbován nahrazením sousedního páru. Podobně, četnost nově vytvořených párů není nikdy větší než četnost nahrazeného páru. Celkově četnost tedy postupně klesá.
+
+Při nahrazování je třeba si dát pozor na sekvence opakujících se symbolů, jako je např. $aaaa$, tento řetězec by měl být nahrazen jen dvěma novými symboly a ne třemi.
+
+\subsection{Varianty algoritmu}
+V průběhu let vzniklo několik vylepšení základního algoritmu, kde každé se snažilo zlepšit jiný aspekt, ať už se jedná o paměťovou složitost nebo menší kompresní poměr. 
+
+V práci \cite{wan2003browsing} se setkáváme s technikou tvoření slovníku z celých slov, raději než jednotlivých symbolů. Na pravá straně přepisovacích pravidel tedy nalezneme dvě slova místo dvou symbolů. Tento upravený algorimus dále nabízí možnost upravit definici slova. 
+
+Dále v \cite{yoshida2013effective} se setkáváme s úpravou finálního kódování, které se používá pro kompresi vygenerovaných přepisovacích pravidel. V originálním algoritmu jsou pravidla kódována pomocí kódů proměnné délky, kdežto zde se rozhodli využít kódu pevné délky. Tato úprava vedla k vylepšení finálních kompresního poměru \cite{yoshida2013effective}.
+
+Podobně jako v \cite{wan2003browsing} se v článku \cite{furuya2019mr} setkáváme s úpravou dovolující nahrazovat více než jen dva symboly. V tomto článku využívají tzv. \emph{Maximal Repeats}. Při nahrazování nejčetnějšího páru se snažíme tento pár co nejvíce zvětšit. Například pro náš text v Tabulce \ref{tab:cfg} by hned první pravidlo mělo na pravé straně řetězec \texttt{abra}, který se dá získat rozšířením páru \texttt{ab}. V článku je dále uvedeno, že tato technika se vyplácí hlavně na texty, obsahující často opakující se sekvence.
+
+Poslední variantou, kterou si zde uvedeme je \emph{Space--Efficient Re--Pair}, představen \linebreak v \cite{bille2017space}. Jak už název napovídá, tento algoritmus se snaží vylepšit hlavně paměťovou náročnost originálního algoritmu, která byla $5n + 4\sigma^2 + 4d + \sqrt{n}$. Kde $n$ značí délku textu, $\sigma$ velikost abecedy a $d$ počet neterminálních symbolů (velikost vygenerované abecedy). V této práci byly představeny celkem dva algoritmy, kde časová složitost druhého je $O(n \log n)$ a vylepšené nároky na paměť jsou $n + \sqrt{n}$.
+Vylepšeních bylo dosaženo pomocí rozdělení algoritmu do dvou fází. První fáze, nahrazuje páry s vysokou četností. To jsou ty, které se vyskytují alespoň $\sqrt{n}/3$ krát. Druhá fáze následně zpracována zbylé páry s menší četností. Obě tyto fáze se liší implementací prioritní fronty, kterou využívají.
 
 
+\newpage
+\section{Testování komprese}
+V této sekci bychom rádi prezentovali data, na kterých budeme zkoušet kompresi, spolu s výsledky, kterých jsme dosáhli. Budeme zde uvádět kompresní poměr, který počítáme podle Rovnice \ref{eq:compression_ratio}. Zároveň budeme uvádět BPS neboli počet bitů na symbol. Symbolem budeme rozumět jeden ASCII znak neboli byte. Toto si můžeme dovolit, neboť všechny testované soubory jsou v anglickém jazyce a nemusíme tedy počítat se speciálními symbole jako je například diakritika.
 
+\begin{equation}
+    \text{CR} = \frac{\text{Počet bytů po kompresi}}{\text{Počet bytů před kompresí}}
+    \label{eq:compression_ratio}
+\end{equation}
 
-Důvodem
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{l | l | r}
+    \toprule
+    Název           & Typ souboru           & Velikost (B)  \\ \midrule
+    bible.txt       & Anglický text         & 4047392       \\
+    dblp.xml.100MB  & XML dokument          & 104857600     \\
+    english.100MB   & Anglický text         & 104857600     \\
+    sources.100MB   & Kód v jazyce C a Java & 104857600     \\
+    \bottomrule
+    \end{tabular}
+    \caption{Testované soubory}
+    \label{tab:cfg}
+\end{table}
 
-% mohli jsme abra ale nene
-% abrakadabra
-% A -> ab
-% ArakadAra
-% B -> Ar
-% BakadBa
-% C -> Ba
-% CkadC
+Všechny testované soubory jsou součástí standardních korpusu pro testování bezztrátové komprese textu. První soubor bible.txt je ještě ze starší doby, proto je jeho velikost menší a 
+je k dispozici na \url{http://corpus.canterbury.ac.nz/index.html}. Zbylé tři dokumenty jsou součástí \emph{Pizza \& Chili} korpusu na webových stránkách \linebreak \url{http://pizzachili.dcc.uchile.cl/texts.html}.
 
+Co se týče algoritmů, se kterými budeme srovnávat Re--Pair tak to budou:
+\begin{enumerate}
+    \item gzip
+    \item lzma
+    \item bzip2
+\end{enumerate}
 
+Gzip je založen na metodě DEFLATE \cite{deflate_spec}, která kombinuje dva různé algoritmy, LZ77 \cite{LZ77} a Huffmanovo kódování. Další zvolenou metodou komprese je algoritmus LZMA \cite{lzma}, který znovu kombinuje více algoritmů. Součástí LZMA najdeme algoritmy LZ77, Markův model predikce a aritmetické kódování, přesněji \emph{Range Coding}. Třetí metodou je algoritmus bzip2 \cite{bzip2}, který podobně jako LZMA kombinuje více metod komprese a současně přidává několik transformací. Pomocí těchto transformací se snaží vylepšit výslednou kompresi. Detailní vysvětlení uvedených algoritmů je nad rámec této práce, zde zkoumáme pouze jejich výsledky. Čtenáři, doporučujeme následovat zdroje uvedené v literatuře.
 
+U všech tří těchto algoritmů můžeme nastavit tzv. úroveň komprese neboli číslo od 0 do 9. Nultá úroveň znamená žádnou kompresi a 9. úroveň naopak maximální kompresi. Toto se u algoritmu Re--Pair nastavit nedá. 
 
-huuuaaa
+Pro ilustraci se můžeme podívat na grafy v Obrázku \ref{fig:compression_level_stats}, kde nalezneme kompresní poměr a rychlost komprese vzhledem k úrovni komprese pro soubor sources.100MB. \linebreak Z těchto grafů vyčteme, že algoritmus lzma dosahuje nejlepších kompresních výsledků, ale za to je taky nejpomalejší. Nejrychlejší je gzip, který je jednoduchým algoritmem, \linebreak a proto taky dosahuje nejhorších výsledků v rámci komprese.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.45\linewidth}
+        \centering
+        
+        \begin{tikzpicture}
+            \begin{axis}[
+                width=1\linewidth,
+                height=1\linewidth,
+                xlabel = {Úroveň komprese},
+                ylabel = {Kompresní poměr},
+                domain=1:9,
+                legend entries = {gzip, lzma, bzip2},
+                legend style={at={(0.5,1.1)},anchor=south,legend columns=-1},
+                ]
+                \addplot[mark=square*,red, thick]       table[x=level,y=gzip] {data_cr.data};
+                \addplot[mark=triangle*,blue, thick]    table[x=level,y=lzma] {data_cr.data};
+                \addplot[mark=*,green, thick]           table[x=level,y=bzip2]{data_cr.data};
+            \end{axis}
+        \end{tikzpicture}
+        \caption{Kompresní poměr vzhledem k úrovni}
+        \label{fig:comp_cr}
+    \end{subfigure}
+    \begin{subfigure}{.45\linewidth}
+        \centering
+        
+        \begin{tikzpicture}
+            \begin{axis}[
+                width=1\linewidth,
+                height=1\linewidth,
+                xlabel = {Úroveň komprese},
+                ylabel = {Rychlost komprese (MB/s)},
+                domain=1:9,
+                legend entries = {gzip, lzma, bzip2},
+                legend style={at={(0.5,1.1)},anchor=south,legend columns=-1},
+                ]
+                \addplot[mark=square*,red, thick]       table[x=level,y=gzip] {data_time.data};
+                \addplot[mark=triangle*,blue, thick]    table[x=level,y=lzma] {data_time.data};
+                \addplot[mark=*,green, thick]           table[x=level,y=bzip2]{data_time.data};
+            \end{axis}
+        \end{tikzpicture}
+        \caption{Ča komprese vzhledem k úrovni}
+        \label{fig:comp_time}
+    \end{subfigure}
+    \caption{Vliv úrovně komprese na kompresní poměr a rychlost, soubor sources.100MB}
+    \label{fig:compression_level_stats}
+\end{figure}
+
+V následující Tabulce \ref{tab:comp_result} jsou již uvedeny výsledky pro všechny testované algoritmy \linebreak a soubory. Algoritmem RP značíme originální algoritmus Re--Pair a pod RP--SE najdeme upravenou variantu představenou v \cite{bille2017space}. Testování probíhalo na počítači s procesorem Intel Core i7-8750H bez využití více jader procesoru.
+
+\begin{table}
+    \centering
+    \begin{tabular}{l | l | r | r | r}
+    \toprule
+    Soubor          & Algoritmus & CR       & BPS       & Rychlost (kB/s)   \\\midrule
+    bible.txt       & gzip       & 0,2909   & 2,3272    & 11142,8690        \\
+                    & lzma       & 0,2187   & 1,7496    & 2174,4037         \\
+                    & bzip2      & 0,2089   & 1,6712    & 13220,2216        \\
+                    & RP         & 0,2604   & 2,0832    & 5899,9880         \\
+                    & RP--SE     & 0,2426   & 1,9408    & 381,9375          \\\midrule
+    dblp.xml.100MB  & gzip       & 0,1686   & 1,3488    & 34997,8193        \\
+                    & lzma       & 0,1103   & 0,8824    & 2475,6255         \\
+                    & bzip2      & 0,1110   & 0,8880    & 9917,5981         \\
+                    & RP         & 0,1289   & 1,0312    & 6093,5380         \\
+                    & RP--SE     & 0,1219   & 0,9752    & 211,3574          \\\midrule
+    english.100MB   & gzip       & 0,3764   & 3,0112    & 12649,8978        \\
+                    & lzma       & 0,2158   & 1,7264    & 1162,6733         \\
+                    & bzip2      & 0,2807   & 2,2456    & 12178,6030        \\
+                    & RP         & 0,2789   & 2,2312    & 3759,9540         \\
+                    & RP--SE     & 0,2476   & 1,9808    & 64,0705           \\\midrule
+    sources.100MB   & gzip       & 0,2282   & 1,8256    & 12851,3163        \\
+                    & lzma       & 0,1528   & 1,2224    & 1824,9400         \\
+                    & bzip2      & 0,1924   & 1,5392    & 12326,4306        \\
+                    & RP         & 0,2321   & 1,8568    & 3872,5710          \\
+                    & RP--SE     & 0,2212   & 1,7696    & 76,5095          \\
+    \bottomrule
+    \end{tabular}
+    \caption{Výsledky komprese}
+    \label{tab:comp_result}
+\end{table}
+
+Podíváme-li se na kompresní poměry, tak si všimneme, že algoritmy Re--Pair dokážou dosáhnout podobných výsledků jako algoritmy lzma a bzip2. Algoritmus gzip je ze všech nejhorší. Celkově nejlepších výsledku na těchto textových souborech dosahuje algoritmus lzma, který se u XML souboru dokázal dostat i pod hranici 1 BPS. Dále si všimneme, že vylepšený algoritmus Re--Pair dosahuje obecně menších kompresních poměrů než originální algoritmus Re--Pair, ale za cenu mnohem pomalejší komprese. Obecně jsou Re--Pair algoritmy řádově pomalejší nežli zbylé. Toto můžeme nejspíš připisovat poněkud horší implementaci než u zbylých algoritmů, které se standardně používají v programech jako je např. 7-zip. Algoritmy Re--Pair nalezneme spíše v odborných pracích a pokusech.
+
 
 \bibliography{citations}
 \bibliographystyle{ieeetr}

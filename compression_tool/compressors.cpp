@@ -163,7 +163,11 @@ azgra::ByteArray bzip2_encode(const azgra::ByteArray &data, azgra::i32 compressi
 CompressionResult test_compression_method(const CompressionMethod method, const char *inputFile, const azgra::i32 compressionLevel)
 {
     const auto data = azgra::io::stream::InBinaryFileStream(inputFile).consume_whole_file();
+    return test_compression_method(method, data, compressionLevel);
+}
 
+CompressionResult test_compression_method(CompressionMethod method, const azgra::ByteArray &data, azgra::i32 compressionLevel)
+{
     azgra::Stopwatch stopwatch;
     stopwatch.start();
     CompressionResult result = {};
@@ -191,9 +195,10 @@ CompressionResult test_compression_method(const CompressionMethod method, const 
     result.originalSize = data.size();
     result.compressionRatio = compression_ratio(result.originalSize, result.compressedSize);
 
-    const auto MB = ((result.originalSize / 1000.0) / 1000.0);
+    const auto MB = ((static_cast<double>(result.originalSize) / 1000.0) / 1000.0);
     const auto SEC = (result.compressionTimeMS / 1000.0);
     result.speed = MB / SEC;
+    result.kB_sec = (static_cast<double>(result.originalSize) / 1000.0) / SEC;
 
     return result;
 }

@@ -8,7 +8,7 @@
 original.sizes <- data.frame(File=c("bible.txt","dblp.xml.100MB", "english.100MB", "sources.100MB"),
                              Size=c(4047392,104857600,104857600,104857600));
 df <- read.csv2("..//benchmark_result.csv")
-df <- df[df$Level==9 | df$Method == "rp" | df$Method == "rpi",];
+df <- df[df$Level==9 | df$Method == "ogrp" | df$Method == "rpse",];
 df <- df[order(df$File),]
 df$OS <- c(4047392,4047392,4047392,4047392,4047392,
            104857600,104857600,104857600,104857600,104857600,

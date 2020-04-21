@@ -35,9 +35,28 @@ int main(int argc, const char **argv)
     else if (repair) method = CompressionMethod::RePair;
     else if (repairImp) method = CompressionMethod::RePairImproved;
 
-    const auto result = test_compression_method(method,inputFileFlag.value(), compressionLevel.value());
+    if (!compressionLevel.is_matched())
+    {
+        const auto data = azgra::io::stream::InBinaryFileStream(inputFileFlag.value()).consume_whole_file();
+        fprintf(stdout, "File: %s\n", inputFileFlag.value());
+        for (int level = 1; level <= 9; ++level)
+        {
+            const auto result = test_compression_method(method, data, level);
+            fprintf(stdout, "Level: %i\tCR: %.4f\tSpeed: %.4f MB/s\tTime: %.4f ms\n",
+                    level,
+                    result.compressionRatio,
+                    result.speed,
+                    result.compressionTimeMS);
+        }
+    }
+    else
+    {
+        const auto result = test_compression_method(method, inputFileFlag.value(), compressionLevel.value());
+        fprintf(stdout, "File: %s\tCR: %.4f\tSpeed: %.4f kB/s\n", inputFileFlag.value(), result.compressionRatio, result.kB_sec);
+    }
 
-    fprintf(stdout, "File: %s\tCR: %.4f\tSpeed: %.4f MB/s\n", inputFileFlag.value(), result.compressionRatio, result.speed);
+//    const auto result = test_compression_method(method, inputFileFlag.value(), compressionLevel.value());
+//    fprintf(stdout, "File: %s\tCR: %.4f\tSpeed: %.4f MB/s\n", inputFileFlag.value(), result.compressionRatio, result.speed);
 
     return 0;
 }

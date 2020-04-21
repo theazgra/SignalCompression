@@ -39,3 +39,4 @@ azgra::ByteArray gzip_encode(const azgra::ByteArray& data, azgra::i32 compressio
 azgra::ByteArray lzma_encode(const azgra::ByteArray& data, azgra::i32 compressionLevel, CompressionResult& info);
 azgra::ByteArray bzip2_encode(const azgra::ByteArray& data, azgra::i32 compressionLevel, CompressionResult& info);
 CompressionResult test_compression_method(CompressionMethod method, const char *inputFile, azgra::i32 compressionLevel);
+CompressionResult test_compression_method(CompressionMethod method, const azgra::ByteArray &data, azgra::i32 compressionLevel);
